@@ -88,13 +88,19 @@ function resetApp() {
     input.focus();
 }
 // --- APP STARTUP ---
+// --- APP STARTUP (Modified for Analytics Cleanup) ---
 async function startApp() {
-    // 1. FORCE CLEAR PREVIOUS DATA
-    clearState(); 
+    // 1. FORCE CLEAR ANALYTICS TABS IMMEDIATELY
+    // This ensures old data is gone before the loader even finishes
+    document.getElementById('viral-ideas-box').innerHTML = '';
+    document.getElementById('audio-box').innerHTML = '';
+    document.getElementById('apps-box').innerHTML = '';
+    document.getElementById('trend-topic-header').innerText = 'Analysing Niche...'; 
+
+    clearState(); // Standard reset for other vars
     
     runLoader(async () => {
         let formData = new FormData();
-        // User Input is captured in initiateSearch, but we grab it again here from global var or input
         const inputVal = document.getElementById('usernameInput').value.trim();
         if(inputVal) currentUsername = inputVal.startsWith('@') ? inputVal : '@' + inputVal;
         
@@ -113,7 +119,7 @@ async function startApp() {
                 followers = data.followers;
                 avgLikes = data.avg_likes;
                 avgComments = data.avg_comments;
-                detectedNiche = data.niche;
+                detectedNiche = data.niche; // <--- CAPTURE NEW NICHE
                 success = true;
             } else { console.error("Scrape failed:", data.error); }
         } catch (e) { console.error("Fetch failed:", e); }
@@ -121,17 +127,24 @@ async function startApp() {
         const seed = stringToHash(currentUsername);
         document.getElementById('dashTitle').innerText = currentUsername;
 
-        // Render Fallback first (handles "Insufficient Data" check inside)
-        renderTrendsFallback(detectedNiche);
+        // 2. UPDATE HEADER WITH NEW NICHE
+        document.getElementById('trend-topic-header').innerText = `🔥 Personalized Strategy: ${detectedNiche}`;
 
         const engagement = followers > 0 ? ((avgLikes + avgComments) / followers * 100).toFixed(2) : "1.5";
         
         if (success) {
             updateDashboardStatsReal(seed, followers, avgLikes, avgComments);
-            // Will gracefully stop if niche is "Insufficient Data"
-            generateAIStrategy(detectedNiche, followers, engagement);
+            
+            // 3. GENERATE NEW SUGGESTIONS BASED ON DETECTED NICHE
+            // We pass the new niche directly to the AI generator
+            if (detectedNiche !== "Insufficient Data") {
+                 generateAIStrategy(detectedNiche, followers, engagement);
+            } else {
+                 renderTrendsFallback("Insufficient Data");
+            }
         } else {
             updateDashboardStats(seed); // Simulation mode
+            renderTrendsFallback(detectedNiche);
         }
 
         // Init Components
@@ -148,26 +161,26 @@ async function startApp() {
     });
 }
 
-// --- AI STRATEGY ---
+// --- AI STRATEGY (Updated to force specific Niche suggestions) ---
 async function generateAIStrategy(niche, followers, engagement) {
-    if (niche === "Insufficient Data") return; // Fallback handled elsewhere
-
-    const loadingHTML = `<div style="padding:20px; text-align:center; color:var(--secondary); animation: pulse 1.5s infinite;">
-                            <i class="fas fa-brain"></i> AI is researching ${niche} trends...
+    // Show loading state specifically in the lists
+    const loadingHTML = `<div style="padding:15px; color:var(--text-muted); font-size:0.9rem;">
+                            <i class="fas fa-circle-notch fa-spin"></i> Generating ${niche} tips...
                          </div>`;
+    
     document.getElementById('viral-ideas-box').innerHTML = loadingHTML;
     document.getElementById('audio-box').innerHTML = loadingHTML;
     document.getElementById('apps-box').innerHTML = loadingHTML;
 
+    // Strict prompt to ensure suggestions match the new niche
     const prompt = `
-        You are an elite Instagram Strategist.
-        The user is in the '${niche}' niche.
-        Stats: ${followers} followers, ${engagement}% engagement.
-        Perform a deep analysis and generate:
-        1. 3 highly specific, viral Reel ideas for THIS niche right now.
-        2. 3 trending audio types or music vibes that fit this niche.
-        3. 3 recommended apps for creating this specific type of content.
-        Return ONLY valid JSON in this format:
+        Context: Instagram Strategy for '${niche}' niche.
+        Stats: ${followers} followers.
+        Task:
+        1. 3 Viral Content Ideas specific to ${niche}.
+        2. 3 Trending Audio/Music vibes for ${niche}.
+        3. 3 Editing Apps/Tools best for ${niche}.
+        Output JSON:
         {
             "viralIdeas": ["Idea 1", "Idea 2", "Idea 3"],
             "audio": ["Audio 1", "Audio 2", "Audio 3"],
@@ -189,28 +202,48 @@ async function generateAIStrategy(niche, followers, engagement) {
         const data = await response.json();
         const content = data.choices[0].message.content;
         const strategy = JSON.parse(content);
+        
+        // Pass the fresh strategy to the UI updater
         updateTrendsUI(strategy);
+        
     } catch (error) {
         console.error("AI Generation Failed:", error);
+        // If AI fails, fallback but still keep the niche header
         renderTrendsFallback(niche); 
-        document.getElementById('viral-ideas-box').innerHTML += `<div style="color:red; font-size:0.7rem; margin-top:10px;">(Offline Mode)</div>`;
+        document.getElementById('viral-ideas-box').innerHTML += `<div style="color:var(--danger); font-size:0.7rem; margin-top:5px;">(AI Offline - Using Defaults)</div>`;
     }
 }
 
+// --- UI UPDATER (Ensures clean slate before adding) ---
 function updateTrendsUI(strategy) {
-    const ideasBox = document.getElementById('viral-ideas-box'); ideasBox.innerHTML = '';
+    // Clear the loading spinners
+    const ideasBox = document.getElementById('viral-ideas-box'); 
+    ideasBox.innerHTML = ''; 
+    
+    const audioBox = document.getElementById('audio-box'); 
+    audioBox.innerHTML = ''; 
+    
+    const appsBox = document.getElementById('apps-box'); 
+    appsBox.innerHTML = '';
+
+    // Populate new data
     strategy.viralIdeas.forEach(idea => {
         ideasBox.innerHTML += `<div class="trend-item"><div class="trend-icon"><i class="fas fa-video"></i></div> <div>${idea}</div></div>`;
     });
-    const audioBox = document.getElementById('audio-box'); audioBox.innerHTML = '';
+    
     strategy.audio.forEach(track => {
         audioBox.innerHTML += `<div class="trend-item"><div class="trend-icon"><i class="fas fa-music"></i></div> <div>${track}</div></div>`;
     });
-    const appsBox = document.getElementById('apps-box'); appsBox.innerHTML = '';
+    
     strategy.apps.forEach(app => {
         appsBox.innerHTML += `<div class="tag-pill">${app}</div>`;
     });
 }
+
+// --- AI STRATEGY ---
+
+
+
 
 function renderTrendsFallback(detectedNiche) {
     if (detectedNiche === "Insufficient Data") {

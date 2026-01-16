@@ -4,6 +4,7 @@ from fastapi.templating import Jinja2Templates
 import instaloader
 import itertools
 import os
+import re
 
 app = FastAPI()
 templates = Jinja2Templates(directory=".")
@@ -44,13 +45,18 @@ def determine_niche(bio, captions_text):
     detected = "General Creator"
     
     for category, tags in scores.items():
-        score = sum(full_text.count(t) for t in tags)
+        score = 0
+        for t in tags:
+            # \b matches word boundaries (start or end of a word)
+            # This ensures "ai" matches "ai" but NOT "daily"
+            matches = re.findall(r'\b' + re.escape(t) + r'\b', full_text)
+            score += len(matches)
+            
         if score > max_score:
             max_score = score
             detected = category
             
     return detected
-
 
 # The Analysis Endpoint
 @app.post("/analyze")
