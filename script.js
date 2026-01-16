@@ -543,8 +543,6 @@ function toggleMission(el) { el.classList.toggle('done'); updateXP(); }
 function updateXP() { document.getElementById('xp-bar').style.width = "50%"; } 
 function runShadowbanScan() { /* ... */ }
 function calcRate() { /* ... */ }
-function runRoast() { document.getElementById('roast-output').innerText = "Simulated Roast"; }
-function generateBio() { document.getElementById('bioOutput').innerText = "Simulated Bio"; }
 function loadImage(input) { /* ... */ }
 function renderHeatmap(seed) {
     const container = document.getElementById('heatmap');
@@ -759,7 +757,174 @@ function renderLeaderboard() {
         container.innerHTML += row;
     });
 }
-function analyzeCaption() { /* ... */ }
+// --- TOOL: AI BIO GENERATOR ---
+async function generateBio() {
+    const role = document.getElementById('bioRole').value.trim();
+    const vibe = document.getElementById('bioVibe').value.trim();
+    const output = document.getElementById('bioOutput');
+    
+    if (!role || !vibe) return alert("Please enter a Role and Vibe first!");
+
+    // UI Loading
+    output.innerHTML = `<div style="text-align:center; padding:10px;"><i class="fas fa-circle-notch fa-spin"></i> Cooking up viral bios...</div>`;
+    output.style.color = "var(--secondary)";
+
+    const prompt = `
+        Task: Write 3 viral Instagram Bios.
+        Role: ${role}
+        Vibe: ${vibe}
+        Constraint: Use emojis, keep it under 150 chars, make it punchy/aesthetic.
+        Output format: Just the 3 bios separated by <br><br>. No intro text.
+    `;
+
+    try {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+                model: "mistral-medium",
+                messages: [{ role: "user", content: prompt }]
+            })
+        });
+
+        const data = await response.json();
+        
+        // If API returns an error inside the JSON
+        if (data.error) throw new Error(data.error.message);
+
+        const result = data.choices[0].message.content;
+        output.innerHTML = result;
+        output.style.color = "#ccc";
+
+    } catch (e) {
+        console.warn("Bio API failed, switching to Simulation:", e);
+        
+        // --- FALLBACK SIMULATION (Guarantees a result) ---
+        setTimeout(() => {
+            const simulatedBios = [
+                `✨ Official ${role} | ${vibe} Soul <br> 📍 Global Citizen <br> 📩 Collabs via DM`,
+                `Creating magic as a ${role} ⚡ <br> ${vibe} vibes only. <br> 👇 Check my latest work`,
+                `👋 Just a ${role} chasing dreams. <br> 🎨 Lover of ${vibe} aesthetics. <br> 🚀 Follow my journey.`
+            ];
+            
+            output.innerHTML = simulatedBios.join('<div style="margin: 10px 0; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;"></div>');
+            output.style.color = "#ccc";
+            
+            // Add a small note so you know it's a simulation
+            output.innerHTML += `<div style="font-size:0.7rem; color:var(--text-muted); margin-top:10px;">(Generated via Offline Mode)</div>`;
+        }, 1000); 
+    }
+}
+
+// --- TOOL: ROAST MY FEED (Brutal Mode) ---
+async function runRoast() {
+    const output = document.getElementById('roast-output');
+    const niche = document.getElementById('trend-topic-header').innerText.replace('🔥 Personalized Strategy: ', '');
+    const followers = globalFollowers;
+
+    // UI Loading
+    output.innerHTML = `<i class="fas fa-fire fa-spin"></i> Incinerating your ego...`;
+    output.style.color = "var(--danger)";
+
+    const prompt = `
+        Persona: Brutal Social Media Critic.
+        Context: User is a '${niche}' creator with ${followers} followers.
+        Task: Roast their account vibe in one savage sentence. 
+        Be mean but funny. Mention their follower count or niche specifically.
+    `;
+
+    try {
+        const response = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+                model: "mistral-medium",
+                messages: [{ role: "user", content: prompt }]
+            })
+        });
+
+        const data = await response.json();
+        const roast = data.choices[0].message.content;
+        
+        output.innerHTML = `"${roast}"`;
+        output.style.color = "#fff";
+
+    } catch (e) {
+        output.innerText = "Simulated Roast: Your feed is so boring even the AI fell asleep.";
+    }
+}
+
+// --- TOOL: CAPTION OPTIMIZER (Grading System) ---
+let captionDebounce;
+
+function analyzeCaption() {
+    clearTimeout(captionDebounce);
+    const input = document.getElementById('captionInput').value;
+    const scoreDisplay = document.getElementById('captionScore');
+    const feedbackDisplay = document.getElementById('captionFeedback');
+
+    if (input.length < 5) {
+        scoreDisplay.innerText = "0";
+        feedbackDisplay.innerText = "Waiting for input...";
+        return;
+    }
+
+    feedbackDisplay.innerText = "Analyzing hook & keywords...";
+    
+    // Wait 1 second after typing stops to save API calls
+    captionDebounce = setTimeout(async () => {
+        const prompt = `
+            Task: Rate this Instagram caption out of 100 and give 1 short tip.
+            Caption: "${input}"
+            Output JSON: { "score": 85, "feedback": "Add a question to boost comments." }
+        `;
+
+        try {
+            const response = await fetch(API_URL, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: "mistral-medium",
+                    messages: [
+                        { role: "system", content: "You are a JSON generator." },
+                        { role: "user", content: prompt }
+                    ],
+                    response_format: { type: "json_object" }
+                })
+            });
+
+            const data = await response.json();
+            const result = JSON.parse(data.choices[0].message.content);
+            
+            // Animate Score
+            animateValue(scoreDisplay, parseInt(scoreDisplay.innerText), result.score, 1000);
+            
+            // Color Coding
+            if(result.score > 80) scoreDisplay.style.color = "var(--success)";
+            else if(result.score > 50) scoreDisplay.style.color = "var(--warning)";
+            else scoreDisplay.style.color = "var(--danger)";
+
+            feedbackDisplay.innerText = result.feedback;
+
+        } catch (e) {
+            console.warn("Caption API failed", e);
+            scoreDisplay.innerText = "Err";
+            feedbackDisplay.innerText = "AI unavailable.";
+        }
+    }, 1000);
+}
+
+// Helper to animate numbers (e.g. 0 to 85)
+function animateValue(obj, start, end, duration) {
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        obj.innerHTML = Math.floor(progress * (end - start) + start);
+        if (progress < 1) window.requestAnimationFrame(step);
+    };
+    window.requestAnimationFrame(step);
+}
 
 function generatePalette(seed) {
     const colors = ['#0f172a', '#334155', '#475569', '#7c3aed', '#a78bfa'];
