@@ -379,31 +379,34 @@
                 </div>
             </div>
 
-            <div id="competitor" class="tab-content">
-                <div class="competitor-layout">
-                    <div class="glass" style="padding: 25px; border-radius: 16px;" data-tilt>
-                        <h3>Add Rival</h3>
-                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">Compare your stats directly.</p>
-                        <input type="text" id="rivalInput" placeholder="@competitor" class="tool-input">
-                        <button class="btn" style="width: 100%;" onclick="updateRadar()">Compare</button>
-                        <div style="margin-top: 30px;">
-                            <div class="vs-badge">WINNER</div>
-                            <h4 id="winner-text" style="color: var(--success);">Analysis Pending...</h4>
-                        </div>
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 20px;">
-                        <div class="glass" style="padding: 25px; border-radius: 16px; height: 300px; display: flex; justify-content: center; align-items: center;">
-                            <div style="width: 100%; max-width: 500px; height: 100%;">
-                                <canvas id="radarChart"></canvas>
-                            </div>
-                        </div>
-                        <div class="glass" style="padding: 20px; border-radius: 16px;">
-                            <h4 style="margin-bottom: 15px;">🏆 Daily Growth Leaders</h4>
-                            <div id="leaderboard-list" class="leader-container"></div>
-                        </div>
-                    </div>
+<div id="competitor" class="tab-content">
+    <div class="competitor-layout">
+        <div class="glass" style="padding: 25px; border-radius: 16px;" data-tilt>
+            <h3>Add Rival</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">Compare your stats directly.</p>
+            <input type="text" id="rivalInput" placeholder="@competitor" class="tool-input">
+            <button class="btn" style="width: 100%;" onclick="updateRadar()">Compare</button>
+            <div style="margin-top: 30px;">
+                <div class="vs-badge">WINNER</div>
+                <h4 id="winner-text" style="color: var(--success);">Analysis Pending...</h4>
+                
+                <div id="battle-report" style="margin-top: 15px; font-size: 0.85rem; line-height: 1.6; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; display: none;">
                 </div>
             </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            <div class="glass" style="padding: 25px; border-radius: 16px; height: 300px; display: flex; justify-content: center; align-items: center;">
+                <div style="width: 100%; max-width: 500px; height: 100%;">
+                    <canvas id="radarChart"></canvas>
+                </div>
+            </div>
+            <div class="glass" style="padding: 20px; border-radius: 16px;">
+                <h4 style="margin-bottom: 15px;">🏆 Daily Growth Leaders</h4>
+                <div id="leaderboard-list" class="leader-container"></div>
+            </div>
+        </div>
+    </div>
+</div>
 
             <div id="aesthetic" class="tab-content">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">

@@ -511,12 +511,6 @@ function runLoader(callback) {
     setTimeout(() => { loader.style.display = 'none'; callback(); }, delay + 500);
 }
 
-function renderLeaderboard() {
-    const container = document.getElementById('leaderboard-list'); container.innerHTML = '';
-    const row1 = document.createElement('div'); row1.className = 'leader-row'; row1.style.background = 'rgba(124, 58, 237, 0.2)'; row1.style.borderRadius = '8px';
-    row1.innerHTML = `<span class="rank-num">1</span><span>@myy.sketch.gallery</span><span style="color: var(--success);">+12.4%</span>`;
-    container.appendChild(row1);
-}
 
 function updateDashboardStatsReal(seed, realFollowers, realAvgLikes, realAvgComments) {
     globalFollowers = realFollowers;
@@ -562,8 +556,211 @@ function renderHeatmap(seed) {
         container.appendChild(div);
     }
 }
+// --- TAB: COMPETITOR INTEL (Functional) ---
+
+// --- TAB: COMPETITOR INTEL (Updated with Battle Report) ---
+// --- TAB: COMPETITOR INTEL (Complete Logic) ---
+
+async function updateRadar() {
+    const rivalInput = document.getElementById('rivalInput').value.trim();
+    if (!rivalInput) return alert("Please enter a competitor's username (@handle).");
+
+    const btn = document.querySelector('#competitor button');
+    const winnerText = document.getElementById('winner-text');
+    const reportBox = document.getElementById('battle-report'); // This matches the new HTML ID
+    
+    // UI Loading State
+    const originalBtnText = btn.innerText;
+    btn.innerText = "🕵️ Scanning Rival...";
+    btn.disabled = true;
+    winnerText.innerText = "Extracting engagement vectors...";
+    winnerText.style.color = "var(--warning)";
+    reportBox.style.display = "none"; 
+
+    try {
+        let formData = new FormData();
+        formData.append('username', rivalInput);
+        
+        const response = await fetch('/analyze', { method: 'POST', body: formData });
+        const data = await response.json();
+
+        if (data.success) {
+            // Processing Data
+            const rivalFollowers = data.followers;
+            const rivalEng = data.followers > 0 ? ((data.avg_likes + data.avg_comments) / data.followers * 100) : 0;
+            const userFollowers = globalFollowers || 1000; 
+            const maxFollowers = Math.max(userFollowers, rivalFollowers) || 1;
+            const userReachScore = Math.min((userFollowers / maxFollowers) * 100 + 20, 100);
+            const rivalReachScore = Math.min((rivalFollowers / maxFollowers) * 100 + 20, 100);
+            const userEngVal = parseFloat(document.getElementById('stat-eng').innerText) || 2.5;
+            const userEngScore = Math.min(userEngVal * 10, 100); 
+            const rivalEngScore = Math.min(rivalEng * 10, 100);
+
+            // Rival Simulation (Hidden Metrics)
+            const rivalSeed = stringToHash(rivalInput);
+            const rivalStats = {
+                reach: rivalReachScore,
+                engagement: rivalEngScore,
+                freq: getPseudoRandom(rivalSeed, 40, 95),
+                saves: getPseudoRandom(rivalSeed + 1, 30, 90),
+                shares: getPseudoRandom(rivalSeed + 2, 20, 85)
+            };
+            const userStats = { reach: userReachScore, engagement: userEngScore, freq: 85, saves: 70, shares: 60 };
+
+            updateRadarChartData(userStats, rivalStats, rivalInput);
+            
+            // This generates the text report
+            generateBattleReport(userStats, rivalStats, rivalInput);
+
+        } else {
+            throw new Error(data.error || "Scrape failed");
+        }
+
+    } catch (e) {
+        console.warn("Rival scrape failed/private, simulating...", e);
+        simulateRivalComparison(rivalInput);
+    }
+
+    btn.disabled = false;
+    btn.innerText = originalBtnText;
+}
+
+function updateRadarChartData(user, rival, rivalName) {
+    if (!radarChart) return;
+    radarChart.data.datasets = [
+        { label: 'You', data: [user.reach, user.engagement, user.freq, user.saves, user.shares], backgroundColor: 'rgba(45, 212, 191, 0.2)', borderColor: '#2dd4bf', borderWidth: 2 },
+        { label: rivalName, data: [rival.reach, rival.engagement, rival.freq, rival.saves, rival.shares], backgroundColor: 'rgba(239, 68, 68, 0.2)', borderColor: '#ef4444', borderWidth: 2 }
+    ];
+    radarChart.update();
+}
+
+function simulateRivalComparison(rivalName) {
+    const seed = stringToHash(rivalName);
+    const rivalStats = {
+        reach: getPseudoRandom(seed, 20, 90),
+        engagement: getPseudoRandom(seed+1, 30, 80),
+        freq: getPseudoRandom(seed+2, 50, 95),
+        saves: getPseudoRandom(seed+3, 20, 70),
+        shares: getPseudoRandom(seed+4, 10, 60)
+    };
+    const userStats = { reach: 75, engagement: 80, freq: 85, saves: 70, shares: 60 };
+    updateRadarChartData(userStats, rivalStats, rivalName);
+    generateBattleReport(userStats, rivalStats, rivalName);
+}
+
+function generateBattleReport(userStats, rivalStats, rivalName) {
+    const winnerText = document.getElementById('winner-text');
+    const reportBox = document.getElementById('battle-report'); // Targets the new HTML div
+    
+    const userTotal = Object.values(userStats).reduce((a,b)=>a+b,0);
+    const rivalTotal = Object.values(rivalStats).reduce((a,b)=>a+b,0);
+    
+    let rivalWins = [];
+    let userWins = [];
+
+    if (rivalStats.reach > userStats.reach) rivalWins.push("Reach"); else userWins.push("Reach");
+    if (rivalStats.engagement > userStats.engagement) rivalWins.push("Engagement"); else userWins.push("Engagement");
+    if (rivalStats.freq > userStats.freq) rivalWins.push("Consistency"); else userWins.push("Consistency");
+    if (rivalStats.saves > userStats.saves) rivalWins.push("Saveable Content"); else userWins.push("Saveable Content");
+
+    let reportHTML = "";
+    if (rivalWins.length > 0) reportHTML += `<div style="color:#ef4444; margin-bottom:5px;"><strong>⚠️ ${rivalName} beats you in:</strong><br> ${rivalWins.join(', ')}</div>`;
+    if (userWins.length > 0) reportHTML += `<div style="color:#10b981;"><strong>✅ You dominate in:</strong><br> ${userWins.join(', ')}</div>`;
+
+    if (userTotal >= rivalTotal) {
+        winnerText.innerHTML = `🏆 YOU are winning!`;
+        winnerText.style.color = "var(--success)";
+    } else {
+        winnerText.innerHTML = `⚠️ ${rivalName} is winning.`;
+        winnerText.style.color = "var(--danger)";
+    }
+
+    reportBox.innerHTML = reportHTML;
+    reportBox.style.display = "block";
+}
+
+// Helper to update the Chart.js instance
+function updateRadarChartData(user, rival, rivalName) {
+    if (!radarChart) return;
+
+    radarChart.data.datasets = [
+        {
+            label: 'You',
+            data: [user.reach, user.engagement, user.freq, user.saves, user.shares],
+            backgroundColor: 'rgba(45, 212, 191, 0.2)',
+            borderColor: '#2dd4bf',
+            borderWidth: 2
+        },
+        {
+            label: rivalName,
+            data: [rival.reach, rival.engagement, rival.freq, rival.saves, rival.shares],
+            backgroundColor: 'rgba(239, 68, 68, 0.2)', // Red for rival
+            borderColor: '#ef4444',
+            borderWidth: 2
+        }
+    ];
+    radarChart.update();
+}
+
+// Fallback Simulation (If API fails or account is private)
+function simulateRivalComparison(rivalName) {
+    const seed = stringToHash(rivalName);
+    const rivalStats = {
+        reach: getPseudoRandom(seed, 20, 90),
+        engagement: getPseudoRandom(seed+1, 30, 80),
+        freq: getPseudoRandom(seed+2, 50, 95),
+        saves: getPseudoRandom(seed+3, 20, 70),
+        shares: getPseudoRandom(seed+4, 10, 60)
+    };
+    const userStats = { reach: 75, engagement: 80, freq: 85, saves: 70, shares: 60 };
+    
+    updateRadarChartData(userStats, rivalStats, rivalName);
+    
+    const wText = document.getElementById('winner-text');
+    wText.innerText = "⚠️ Simulation Mode (Rival is Private)";
+    wText.style.color = "var(--warning)";
+}
+
+// --- NICHE LEADERBOARD (Dynamic) ---
+function renderLeaderboard() {
+    const container = document.getElementById('leaderboard-list');
+    container.innerHTML = ''; // Clear old list
+
+    // 1. Get Niche (e.g. "Tech & Coding")
+    let niche = document.getElementById('trend-topic-header').innerText.replace('🔥 Personalized Strategy: ', '');
+    // Handle cases where header hasn't loaded yet
+    if (niche.includes('...') || niche.includes('Analysing')) niche = "Tech & Coding"; 
+
+    // 2. Define Famous Leaders per Niche
+    const leadersDB = {
+        "Tech & Coding": ["@techcrunch", "@code.bliss", "@react.js", "@programmer.humor"],
+        "Art & Design": ["@banksy", "@design.milk", "@procreate", "@ux.ui"],
+        "Fitness & Health": ["@gymshark", "@chrisbumstead", "@yoga.daily", "@menshealthmag"],
+        "Business & Marketing": ["@garyvee", "@forbes", "@businessinsider", "@marketing.harry"],
+        "Travel & Lifestyle": ["@beautifuldestinations", "@natgeotravel", "@doyoutravel", "@airbnb"],
+        "Food & Cooking": ["@gordonramsay", "@tasty", "@bonappetit", "@food52"],
+        "General Creator": ["@instagram", "@creators", "@mosseri", "@meta"]
+    };
+
+    const targets = leadersDB[niche] || leadersDB["General Creator"];
+
+    // 3. Render Rows
+    targets.forEach((handle, index) => {
+        const growth = (Math.random() * 15 + 5).toFixed(1); // Random growth 5-20%
+        const row = `
+            <div class="leader-row">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span class="rank-num" style="color:${index === 0 ? '#facc15' : 'var(--text-muted)'}">${index + 1}</span>
+                    <span>${handle}</span>
+                </div>
+                <span style="color: var(--success); font-weight:bold;">+${growth}%</span>
+            </div>
+        `;
+        container.innerHTML += row;
+    });
+}
 function analyzeCaption() { /* ... */ }
-function updateRadar() { /* ... */ }
+
 function generatePalette(seed) {
     const colors = ['#0f172a', '#334155', '#475569', '#7c3aed', '#a78bfa'];
     if(seed % 2 === 0) colors.reverse();
