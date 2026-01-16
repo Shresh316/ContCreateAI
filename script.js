@@ -26,14 +26,16 @@ const tailoredTrends = {
 
 // --- CORE: HARD RESET FUNCTION ---
 // This runs on "Reset" button AND before every new search
+// --- CORE: HARD RESET FUNCTION ---
+// This runs on "Reset" button AND before every new search
 function clearState() {
-    // 1. Destroy Charts (The most common bug cause)
+    // 1. Destroy Charts (Prevents "canvas is already in use" errors)
     if(mainChart) { mainChart.destroy(); mainChart = null; }
     if(radarChart) { radarChart.destroy(); radarChart = null; }
     if(sentimentChart) { sentimentChart.destroy(); sentimentChart = null; }
     if(strategyChart) { strategyChart.destroy(); strategyChart = null; }
 
-    // 2. Clear Visual Content
+    // 2. Clear Visual Content (Lists, Grids, Avatars)
     document.getElementById('viral-ideas-box').innerHTML = '';
     document.getElementById('audio-box').innerHTML = '';
     document.getElementById('apps-box').innerHTML = '';
@@ -42,31 +44,49 @@ function clearState() {
     document.getElementById('viral-ideas-list').innerHTML = '';
     document.getElementById('paletteBox').innerHTML = '';
     document.getElementById('heatmap').innerHTML = '';
-    
-    // 3. Reset Text placeholders
-    document.getElementById('dashTitle').innerText = '...';
+    document.getElementById('dash-avatar').innerHTML = ''; // Wipe Avatar
+    document.getElementById('chat-box').innerHTML = ''; // Wipe Chat history
+
+    // 3. Reset Text Placeholders to Defaults
+    document.getElementById('dashTitle').innerText = '@user';
     document.getElementById('stat-followers').innerText = '...';
     document.getElementById('stat-eng').innerText = '...';
     document.getElementById('stat-reach').innerText = '...';
     document.getElementById('stat-likes').innerText = '...';
     document.getElementById('stat-comments').innerText = '...';
     document.getElementById('stat-viral').innerText = '...';
-    document.getElementById('trend-topic-header').innerText = '...';
+    document.getElementById('trend-topic-header').innerText = '🔥 Personalized Viral Strategy';
+    document.getElementById('money-display').innerText = '$0';
+    document.getElementById('captionScore').innerText = '0';
+    document.getElementById('captionFeedback').innerText = 'Waiting for input...';
 
-    // 4. Reset Variables
+    // 4. Clear Tool Inputs
+    document.getElementById('rivalInput').value = '';
+    document.getElementById('chatInput').value = '';
+    document.getElementById('goalInput').value = '';
+    document.getElementById('bioRole').value = '';
+    document.getElementById('bioVibe').value = '';
+    document.getElementById('captionInput').value = '';
+
+    // 5. Reset Global Variables
     currentUsername = "";
     globalFollowers = 0;
 }
 
 // --- BUTTON: FULL RESET (Goes back to home) ---
-function fullReset() {
-    clearState(); // Wipe data
+// RENAMED from fullReset to resetApp to match your index.html onclick
+function resetApp() {
+    clearState(); // Wipe all data first
+    
+    // Switch Views
     document.getElementById('view-dashboard').style.display = 'none';
     document.getElementById('view-home').style.display = 'flex';
-    document.getElementById('usernameInput').value = '';
-    document.getElementById('usernameInput').focus();
+    
+    // Clear Main Login Input
+    const input = document.getElementById('usernameInput');
+    input.value = '';
+    input.focus();
 }
-
 // --- APP STARTUP ---
 async function startApp() {
     // 1. FORCE CLEAR PREVIOUS DATA
