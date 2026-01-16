@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ContCreate AI | Innovation Hackathon 2026</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.7.0/vanilla-tilt.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-default">
+
+    <div class="background-fx">
+        <i class="fas fa-arrow-trend-up float-icon icon-up"></i>
+        <i class="fas fa-arrow-trend-down float-icon icon-down"></i>
+        <i class="fab fa-instagram float-icon icon-insta"></i>
+        <i class="fas fa-heart float-icon icon-heart"></i>
+        <i class="fas fa-comment float-icon icon-comment"></i>
+        <i class="fas fa-bolt float-icon icon-bolt"></i>
+    </div>
+
+    <div id="gate-overlay">
+        <div id="gate-left" class="gate-panel"></div>
+        <div id="gate-right" class="gate-panel"></div>
+        
+        <div class="gate-content-wrapper" id="gate-content">
+            <i class="fas fa-microchip" style="font-size: 4rem; color: var(--secondary); margin-bottom: 20px; animation: pulse 2s infinite;"></i>
+            <h1 class="lightning-text">INNOVATION<br>HACKATHON '26</h1>
+            <div class="hack-sub">FUTURE TECH EDITION</div>
+            
+            <button class="enter-btn" onclick="openGate()">[ ENTER SYSTEM ]</button>
+            <div class="team-link" onclick="openTeamModal()">View Creators Team</div>
+        </div>
+    </div>
+
+    <div id="team-modal" class="modal-overlay">
+        <div class="modal-card glass">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="color: white; margin: 0; font-family: 'Orbitron', sans-serif;">🛠️ DEVELOPMENT TEAM</h3>
+                <i class="fas fa-times" style="cursor: pointer; color: #666;" onclick="closeTeamModal()"></i>
+            </div>
+
+            <div class="team-list">
+                <div class="team-member"><span>Kumar Shaurya</span></div>
+                <div class="team-member"><span>Saksham Kumar</span></div>
+                <div class="team-member"><span>Kanishka Nanda</span></div>
+                <div class="team-member"><span>Shreshtha Gupta</span></div>
+                <div class="team-member"><span>Gauri Mishra</span></div>
+            </div>
+
+            <button class="btn" style="width: 100%; margin-top: 25px;" onclick="closeTeamModal()">Close</button>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-card glass">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="color: white; margin: 0;"><i class="fas fa-cog"></i> Settings</h3>
+                <i class="fas fa-times" style="cursor: pointer; color: #666;" onclick="closeSettingsModal()"></i>
+            </div>
+            <div class="settings-row">
+                <span><i class="fas fa-eye-slash"></i> Safe Mode (Blur Stats)</span>
+                <label class="switch">
+                    <input type="checkbox" id="safeModeToggle" onchange="toggleSafeMode()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <button class="btn" style="width: 100%;" onclick="closeSettingsModal()">Save & Close</button>
+        </div>
+    </div>
+
+    <div id="verify-modal" class="modal-overlay">
+        <div class="modal-card glass">
+            <h3 style="margin-bottom: 20px; color: var(--text-muted);">Account Found</h3>
+            <div class="profile-avatar" id="verify-avatar"></div>
+            <h2 id="verify-username" style="margin-bottom: 10px;">@username</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 30px;">Is this the page you are looking for?</p>
+            <div style="display: flex; gap: 15px;">
+                <button class="btn btn-danger" style="flex:1" onclick="cancelSearch()">No, Retry</button>
+                <button class="btn" style="flex:1" onclick="confirmSearch()">Yes, Analyze</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="hacker-loader">
+        <div id="code-container"></div>
+    </div>
+
+    <nav class="sidebar">
+        <div style="font-size: 1.4rem; font-weight: 700; margin-bottom: 40px; color: white; display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-bolt" style="color: var(--secondary);"></i> ContCreate AI
+        </div>
+        <div class="glass" style="padding: 10px; border-radius: 8px; display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+            <i class="fas fa-fire" style="color: #ef4444; font-size: 1.2rem; animation: pulse 2s infinite;"></i>
+            <div>
+                <div style="font-size: 0.7rem; color: #999;">DAILY STREAK</div>
+                <div style="font-weight: bold;">3 Days 🔥</div>
+            </div>
+        </div>
+        <div style="font-size: 0.75rem; letter-spacing: 1px; color: #666; margin-bottom: 15px;">MENU</div>
+        <div style="color: white; margin-bottom: 10px; cursor: pointer;"><i class="fas fa-home" style="width: 25px;"></i> Dashboard</div>
+        <div style="color: #888; margin-bottom: 10px; cursor: pointer;" onclick="openSettingsModal()"><i class="fas fa-cog" style="width: 25px;"></i> Settings</div>
+        <div style="color: #888; margin-bottom: 10px; cursor: pointer;" onclick="openTeamModal()"><i class="fas fa-users" style="width: 25px;"></i> View Team</div>
+        <div style="margin-bottom: 20px;">
+            <div style="font-size: 0.7rem; color: #666; margin-bottom: 5px;">THEME</div>
+            <div style="display: flex; gap: 10px;">
+                <div class="theme-dot" style="background: #7c3aed;" onclick="setTheme('')" title="Titanium (Default)"></div>
+                <div class="theme-dot" style="background: #ef4444;" onclick="setTheme('theme-fire')" title="Fire Mode"></div>
+                <div class="theme-dot" style="background: #06b6d4;" onclick="setTheme('theme-ice')" title="Ice Mode"></div>
+            </div>
+        </div>
+        <div class="mission-box glass" data-tilt>
+            <div class="xp-container">
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem;">
+                    <span id="level-text">Level 3</span>
+                    <span id="xp-text" style="color: var(--secondary);">0/3 XP</span>
+                </div>
+                <div class="xp-track"><div class="xp-fill" id="xp-bar"></div></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; margin-top: 15px;">
+                <span style="font-weight: 600; font-size: 0.9rem;">Daily Quests</span>
+            </div>
+            <div class="mission-item" onclick="toggleMission(this)">
+                <div class="checkbox"><i class="fas fa-check" style="font-size: 10px; color: white;"></i></div>
+                <span>Analyze 1 Competitor</span>
+            </div>
+            <div class="mission-item" onclick="toggleMission(this)">
+                <div class="checkbox"><i class="fas fa-check" style="font-size: 10px; color: white;"></i></div>
+                <span>Grade a Caption</span>
+            </div>
+            <div class="mission-item" onclick="toggleMission(this)">
+                <div class="checkbox"><i class="fas fa-check" style="font-size: 10px; color: white;"></i></div>
+                <span>Reply to 3 Comments</span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+
+        <div id="view-platform-select">
+            <h1 style="font-size: 2.5rem; margin-bottom: 10px; font-family: 'Orbitron', sans-serif;">SELECT PLATFORM</h1>
+            <p style="color: var(--text-muted); margin-bottom: 40px;">Choose the network you want to dominate.</p>
+
+            <div class="platform-grid">
+                <div class="platform-card disabled" data-tilt>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Logo_of_YouTube_%282015-2017%29.svg/960px-Logo_of_YouTube_%282015-2017%29.svg.png" alt="YouTube">
+                    <div class="badge-soon">COMING SOON</div>
+                </div>
+
+                <div class="platform-card" onclick="selectPlatform('instagram')" data-tilt style="border-color: var(--secondary); box-shadow: 0 0 30px rgba(45,212,191,0.2);">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Instagram_icon.png/2048px-Instagram_icon.png" alt="Instagram">
+                    <div class="badge-active">ACTIVE</div>
+                </div>
+
+                <div class="platform-card disabled" data-tilt>
+                    <img src="https://logos-world.net/wp-content/uploads/2020/05/Facebook-Logo-2019.png" alt="Facebook">
+                    <div class="badge-soon">COMING SOON</div>
+                </div>
+
+                <div class="platform-card disabled" data-tilt>
+                    <img src="https://pngimg.com/d/x_logo_PNG19.png" alt="X">
+                    <div class="badge-soon">COMING SOON</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-home" style="display: none;">
+            <div style="background: linear-gradient(135deg, var(--primary), var(--secondary)); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; box-shadow: 0 0 30px rgba(124, 58, 237, 0.4); animation: pulse 3s infinite;" data-tilt>
+                <i class="fas fa-bolt" style="font-size: 2rem; color: white;"></i>
+            </div>
+            <h1 style="font-size: 3rem; margin-bottom: 10px; font-family: 'Orbitron', sans-serif;">ANALYSE WITH CONTCREATE AI</h1>
+            <p style="color: var(--text-muted); margin-bottom: 30px;">Enter credentials to unlock AI Insights.</p>
+
+            <div style="width: 100%; max-width: 400px;">
+                <input type="text" class="hero-input" id="usernameInput" placeholder="Username (e.g. @nike)" onkeypress="handleEnter(event)">
+                <button class="btn" style="width: 100%;" onclick="initiateSearch()">Analyze Profile <i class="fas fa-arrow-right"></i></button>
+            </div>
+
+            <div style="margin-top: 40px;">
+                <p style="font-size: 0.8rem; color: #666; margin-bottom: 15px;">HISTORY</p>
+                <div class="sample-chips">
+                    <div class="sample-chip" onclick="fillAndSearch('myy.sketch.gallery')">@myy.sketch.gallery</div>
+                    <div class="sample-chip" onclick="fillAndSearch('design_ninja')">@design_ninja</div>
+                    <div class="sample-chip" onclick="fillAndSearch('art.daily')">@art.daily</div>
+                    <div class="sample-chip" onclick="fillAndSearch('pixel_king')">@pixel_king</div>
+                    <div class="sample-chip" onclick="fillAndSearch('create_now')">@create_now</div>
+                    <div class="sample-chip" onclick="fillAndSearch('ux.ui.inspo')">@ux.ui.inspo</div>
+                    <div class="sample-chip" onclick="fillAndSearch('web.master')">@web.master</div>
+                    <div class="sample-chip" onclick="fillAndSearch('code_life')">@code_life</div>
+                    <div class="sample-chip" onclick="fillAndSearch('dev.env')">@dev.env</div>
+                    <div class="sample-chip" onclick="fillAndSearch('hacker.mode')">@hacker.mode</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-dashboard">
+            <div style="display: flex; align-items: center; margin-bottom: 25px;">
+                <div id="dash-avatar" class="profile-avatar-small"></div>
+                <div style="flex: 1;">
+                    <h2 id="dashTitle" style="font-size: 2rem; line-height: 1;">@user</h2>
+                    <span style="font-size: 0.8rem; color: var(--secondary);">AI Analysis Complete</span>
+                </div>
+                <button class="btn btn-outline" onclick="resetApp()"><i class="fas fa-power-off"></i> Reset</button>
+            </div>
+
+            <div class="nav-tabs">
+                <button class="nav-btn active" onclick="setTab('overview', this)">📊 Overview</button>
+                <button class="nav-btn" onclick="setTab('trends', this)" style="color: var(--warning);">🔥 Analytics & Suggestions</button>
+                <button class="nav-btn" onclick="setTab('goals', this)" style="color: var(--success);">🎯 Goals</button>
+                <button class="nav-btn" onclick="setTab('assistant', this)">💬 AI Assistant</button>
+                <button class="nav-btn" onclick="setTab('strategy', this)">🎯 AI Roadmap</button>
+                <button class="nav-btn" onclick="setTab('competitor', this)">⚔️ Competitor Intel</button>
+                <button class="nav-btn" onclick="setTab('aesthetic', this)">🎨 Aesthetic DNA</button>
+                <button class="nav-btn" onclick="setTab('tools', this)" style="color: var(--secondary);">🛠️ AI Tools</button>
+            </div>
+
+            <div id="overview" class="tab-content active">
+                <div class="stats-grid">
+                    <div class="stat-card glass">
+                        <i class="fas fa-users stat-icon"></i>
+                        <div style="color: white; font-size: 0.8rem; font-weight: bold; letter-spacing: 1px;">TOTAL FOLLOWERS</div>
+                        <h3 id="stat-followers">...</h3>
+                        <div style="font-size: 0.8rem; color: var(--success);">+142 this week</div>
+                    </div>
+                    <div class="stat-card glass">
+                        <i class="fas fa-eye stat-icon"></i>
+                        <div style="color: var(--accent); font-size: 0.8rem; font-weight: bold; letter-spacing: 1px;">PREDICTED REACH</div>
+                        <h3 id="stat-reach">...</h3>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">+22% vs last month</div>
+                    </div>
+                    <div class="stat-card glass">
+                        <i class="fas fa-chart-line stat-icon"></i>
+                        <div style="color: var(--secondary); font-size: 0.8rem; font-weight: bold; letter-spacing: 1px;">ENGAGEMENT RATE</div>
+                        <h3 id="stat-eng">...</h3>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">Top 10% of niche</div>
+                    </div>
+
+                    <div class="stat-card glass">
+                        <i class="fas fa-heart stat-icon"></i>
+                        <div style="color: #fca5a5; font-size: 0.8rem; font-weight: bold; letter-spacing: 1px;">AVG LIKES</div>
+                        <h3 id="stat-likes">...</h3>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">Per Post</div>
+                    </div>
+                    <div class="stat-card glass">
+                        <i class="fas fa-comment stat-icon"></i>
+                        <div style="color: #93c5fd; font-size: 0.8rem; font-weight: bold; letter-spacing: 1px;">AVG COMMENTS</div>
+                        <h3 id="stat-comments">...</h3>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">High interaction</div>
+                    </div>
+                    <div class="stat-card glass">
+                        <i class="fas fa-fire stat-icon"></i>
+                        <div style="color: var(--primary); font-size: 0.8rem; font-weight: bold; letter-spacing: 1px;">VIRALITY SCORE</div>
+                        <h3 id="stat-viral">...</h3>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">Algorithm friendly</div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div class="glass" style="padding: 25px; border-radius: 16px; height: 350px;">
+                        <h4 style="margin-bottom: 15px;">Growth Projection (AI Model)</h4>
+                        <div style="height: 280px;"><canvas id="mainChart"></canvas></div>
+                    </div>
+                    <div class="glass" style="padding: 25px; border-radius: 16px; height: 350px; text-align: center;">
+                        <h4 style="margin-bottom: 15px;">Audience Vibe</h4>
+                        <div style="height: 220px; position: relative;">
+                            <canvas id="sentimentChart"></canvas>
+                        </div>
+                        <div style="margin-top: 15px; font-size: 0.8rem; color: var(--text-muted);">
+                            <span style="color:#10b981">● Positive</span> &nbsp; <span style="color:#ef4444">● Toxic</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass" style="padding: 25px; border-radius: 16px; margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h4>📅 Best Time to Post</h4>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);"><span style="color: var(--success)">■</span> High Reach</div>
+                    </div>
+                    <div class="heatmap-grid" id="heatmap">
+                        </div>
+                </div>
+            </div>
+
+            <div id="trends" class="tab-content">
+                <div style="margin-bottom: 25px;">
+                    <h2 id="trend-topic-header" style="color: var(--warning);">🔥 Personalized Viral Strategy</h2>
+                    <p style="color: var(--text-muted);">Tailored AI recommendations based on your niche content.</p>
+                </div>
+
+                <div class="trends-grid">
+                    <div class="glass trend-card" data-tilt>
+                        <h3 style="color: var(--accent); margin-bottom: 15px;"><i class="fas fa-video"></i> Viral Reel Ideas</h3>
+                        <div class="trend-list" id="viral-ideas-box"></div>
+                    </div>
+
+                    <div class="glass trend-card" data-tilt>
+                        <h3 style="color: var(--secondary); margin-bottom: 15px;"><i class="fas fa-music"></i> Trending Audio Vault</h3>
+                        <p style="font-size: 0.8rem; color: #999; margin-bottom: 10px;">Use these sounds to boost reach by 30-50%.</p>
+                        <div class="trend-list" id="audio-box"></div>
+                    </div>
+
+                    <div class="glass trend-card" data-tilt>
+                        <h3 style="color: var(--primary); margin-bottom: 15px;"><i class="fas fa-layer-group"></i> Best Editing Stack</h3>
+                        <p style="font-size: 0.8rem; color: #999; margin-bottom: 10px;">Recommended apps for your specific content style.</p>
+                        <div class="tag-cloud" id="apps-box"></div>
+                    </div>
+
+                    <div class="glass trend-card" data-tilt>
+                        <h3 style="color: #fff; margin-bottom: 15px;"><i class="fas fa-bolt"></i> High Reach Content Format</h3>
+                        <div style="padding: 15px; border: 1px dashed var(--glass-border); border-radius: 8px; background: rgba(255,255,255,0.02);">
+                            <h4 id="format-title" style="color: var(--warning); margin-bottom: 5px;">The "Hook & Loop" Structure</h4>
+                            <p id="format-desc" style="font-size: 0.9rem; color: #ccc; line-height: 1.6;">Start with a 1-second visual shock, provide value for 15s, then tell them to read caption for more.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="goals" class="tab-content">
+                <div class="glass" style="padding: 30px; border-radius: 16px; max-width: 800px; margin: 0 auto;">
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <h2 style="color: var(--success); margin-bottom: 10px; font-family: 'Orbitron', sans-serif;"><i class="fas fa-bullseye"></i> GROWTH PROTOCOL</h2>
+                        <p style="color: var(--text-muted);">Tell us what you want (Money, Clout, Fame), and the System will cook up a plan.</p>
+                    </div>
+
+                    <div style="display: flex; gap: 15px; margin-bottom: 30px;">
+                        <input type="text" id="goalInput" class="tool-input" style="margin:0; flex:1;" placeholder="Ex: I want to make money...">
+                        <button class="btn" onclick="generateGoalPlan()">GENERATE PLAN</button>
+                    </div>
+
+                    <div id="goal-results" class="goal-results">
+                        <h3 style="border-bottom: 1px solid var(--glass-border); padding-bottom: 10px; margin-bottom: 20px;">🚀 THE PLAYBOOK</h3>
+                        <div id="goal-steps-container"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="assistant" class="tab-content">
+                <div class="glass chat-container">
+                    <div class="chat-messages" id="chat-box">
+                        <div class="message msg-bot">
+                            Hello! I am your <b>REAL AI</b> Instagram Growth Assistant (Powered by Mistral). <br>
+                            I can generate topics, captions, and strategies for you. <br>
+                            Try asking: <b>"Give me 3 viral topics"</b> or <b>"Write a caption for a travel photo"</b>.
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <div class="quick-chips">
+                            <div class="chip" onclick="sendQuickMsg('Give me 5 viral topics for a Tech page')">🔥 Viral Topics</div>
+                            <div class="chip" onclick="sendQuickMsg('What is the best time to post on Instagram?')">📈 Growth Tip</div>
+                            <div class="chip" onclick="sendQuickMsg('Write a hook for a Reel about studying')">🎣 Reel Hook</div>
+                            <div class="chip" onclick="sendQuickMsg('Generate hashtags for a food blog')">#️⃣ Hashtags</div>
+                        </div>
+                        <div class="input-group">
+                            <input type="text" id="chatInput" class="tool-input" style="margin:0;" placeholder="Ask AI anything..." onkeypress="handleChatEnter(event)">
+                            <button class="btn" style="width: auto;" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="strategy" class="tab-content">
+                <div class="roadmap-container">
+                    <div class="roadmap-timeline" id="ai-roadmap-list"></div>
+                    <div class="strategy-sidebar">
+                        <div class="glass" style="padding: 25px; border-radius: 16px; height: 300px; text-align: center;">
+                            <h4 style="margin-bottom: 15px;">Ideal Content Mix</h4>
+                            <div style="height: 220px; position: relative;"><canvas id="strategyChart"></canvas></div>
+                        </div>
+                        <div class="glass" style="padding: 25px; border-radius: 16px; flex:1;">
+                            <h4 style="margin-bottom: 15px; color: var(--accent);"><i class="fas fa-bolt"></i> Viral Ideas for You</h4>
+                            <div id="viral-ideas-list" style="font-size: 0.9rem; color: #ccc; line-height: 1.6;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="competitor" class="tab-content">
+                <div class="competitor-layout">
+                    <div class="glass" style="padding: 25px; border-radius: 16px;" data-tilt>
+                        <h3>Add Rival</h3>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">Compare your stats directly.</p>
+                        <input type="text" id="rivalInput" placeholder="@competitor" class="tool-input">
+                        <button class="btn" style="width: 100%;" onclick="updateRadar()">Compare</button>
+                        <div style="margin-top: 30px;">
+                            <div class="vs-badge">WINNER</div>
+                            <h4 id="winner-text" style="color: var(--success);">Analysis Pending...</h4>
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                        <div class="glass" style="padding: 25px; border-radius: 16px; height: 300px; display: flex; justify-content: center; align-items: center;">
+                            <div style="width: 100%; max-width: 500px; height: 100%;">
+                                <canvas id="radarChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="glass" style="padding: 20px; border-radius: 16px;">
+                            <h4 style="margin-bottom: 15px;">🏆 Daily Growth Leaders</h4>
+                            <div id="leaderboard-list" class="leader-container"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="aesthetic" class="tab-content">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                    <div class="glass" style="padding: 30px; border-radius: 16px; text-align: center;" data-tilt>
+                        <i class="fas fa-palette" style="font-size: 2rem; color: var(--accent); margin-bottom: 15px;"></i>
+                        <h2>Visual Identity</h2>
+                        <p style="color: var(--text-muted); margin: 0 auto 30px;">AI Scanned Palette</p>
+                        <div class="palette-row" id="paletteBox"></div>
+                        <div style="display: flex; justify-content: center; gap: 40px; margin-top: 30px;">
+                            <div><div style="font-size: 2rem; font-weight: bold;">92%</div><div style="font-size: 0.8rem; color: var(--text-muted);">Consistency</div></div>
+                            <div><div style="font-size: 2rem; font-weight: bold;">Dark</div><div style="font-size: 0.8rem; color: var(--text-muted);">Vibe</div></div>
+                        </div>
+                    </div>
+                    <div class="glass" style="padding: 30px; border-radius: 16px;" data-tilt>
+                        <h3 style="margin-bottom: 10px;">Grid Planner</h3>
+                        <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 15px;">Click to upload & preview layout.</p>
+                        <div class="feed-grid">
+                            <label class="feed-item"><input type="file" hidden onchange="loadImage(this)"><i class="fas fa-plus"></i></label>
+                            <label class="feed-item"><input type="file" hidden onchange="loadImage(this)"><i class="fas fa-plus"></i></label>
+                            <label class="feed-item"><input type="file" hidden onchange="loadImage(this)"><i class="fas fa-plus"></i></label>
+                            <label class="feed-item"><input type="file" hidden onchange="loadImage(this)"><i class="fas fa-plus"></i></label>
+                            <label class="feed-item"><input type="file" hidden onchange="loadImage(this)"><i class="fas fa-plus"></i></label>
+                            <label class="feed-item"><input type="file" hidden onchange="loadImage(this)"><i class="fas fa-plus"></i></label>
+                            <label class="feed-item"><input type="file" hidden onchange="loadImage(this)"><i class="fas fa-plus"></i></label>
+                            <label class="feed-item"><input type="file" hidden onchange="loadImage(this)"><i class="fas fa-plus"></i></label>
+                            <label class="feed-item"><input type="file" hidden onchange="loadImage(this)"><i class="fas fa-plus"></i></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tools" class="tab-content">
+                <div class="tools-grid">
+                    <div class="glass tool-card" data-tilt>
+                        <h3><i class="fas fa-bolt" style="color: var(--primary);"></i> AI Bio Generator</h3>
+                        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Generate viral bios instantly.</p>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="bioRole" placeholder="Role (e.g. Photographer)" class="tool-input">
+                            <input type="text" id="bioVibe" placeholder="Vibe (e.g. Minimal)" class="tool-input">
+                        </div>
+                        <button class="btn" style="width: 100%; margin-bottom: 15px;" onclick="generateBio()">Generate</button>
+                        <div id="bioOutput" style="font-size: 0.85rem; white-space: pre-line; color: #ccc;"></div>
+                    </div>
+                    <div class="glass tool-card" data-tilt>
+                        <h3><i class="fas fa-shield-alt" style="color: var(--success);"></i> Shadowban Scanner</h3>
+                        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Check if your content is hidden.</p>
+                        <div id="scan-terminal" style="background: rgba(0,0,0,0.5); padding: 10px; border-radius: 6px; height: 80px; font-family: monospace; font-size: 0.7rem; color: #0f0; overflow-y: auto; margin-bottom: 10px;">
+                            Ready to scan...
+                        </div>
+                        <button class="btn" style="width: 100%;" onclick="runShadowbanScan()">Run Diagnostics</button>
+                    </div>
+                    <div class="glass tool-card" data-tilt>
+                         <h3><i class="fas fa-money-bill-wave" style="color: #10b981;"></i> Rate Calculator</h3>
+                         <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Est. earnings per sponsored post.</p>
+                         <div style="text-align: center; padding: 10px;">
+                            <div style="font-size: 0.8rem; color: #ccc;">Your potential rate:</div>
+                            <div id="money-display" style="font-size: 2rem; font-weight: bold; color: #10b981;">$0</div>
+                         </div>
+                         <button class="btn" style="width: 100%;" onclick="calcRate()">Calculate</button>
+                    </div>
+                    <div class="glass tool-card" data-tilt>
+                         <h3><i class="fas fa-pepper-hot" style="color: var(--danger);"></i> Roast My Feed</h3>
+                         <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Brutal AI critique of your vibes.</p>
+                         <div id="roast-output" style="font-size: 0.9rem; color: #fff; font-style: italic; min-height: 40px; display:flex; align-items:center; justify-content:center; text-align:center;">
+                            "Dare to click?"
+                         </div>
+                         <button class="btn btn-danger" style="width: 100%; margin-top: 10px;" onclick="runRoast()">Roast Me</button>
+                    </div>
+                    <div class="glass tool-card locked-card" data-tilt>
+                        <h3><i class="fas fa-eye" style="color: var(--accent);"></i> Ad Spy 2.0</h3>
+                        <p style="color: var(--text-muted); font-size: 0.85rem;">See competitors hidden ads.</p>
+                        <br>
+                        <p>Lorem ipsum dolor sit amet contents hidden.</p>
+                        <div class="blur-overlay"><i class="fas fa-lock" style="font-size: 2rem; margin-bottom: 10px;"></i><button class="btn">Upgrade to PRO</button></div>
+                    </div>
+                    <div class="glass tool-card" data-tilt>
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div><h3><i class="fas fa-magic" style="color: var(--primary);"></i> Caption Optimizer</h3></div>
+                            <div style="text-align: right;"><div id="captionScore" class="grade-score">0</div></div>
+                        </div>
+                        <textarea id="captionInput" rows="3" class="tool-input" placeholder="Paste caption..." oninput="analyzeCaption()"></textarea>
+                        <div id="captionFeedback" style="font-size: 0.8rem; color: var(--accent);">Waiting for input...</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <div class="ticker-bar">
+        <div class="scrolling-text">
+            <span style="color: var(--secondary);">TRENDING AUDIO:</span> "Flowers - Miley Cyrus"
+            &nbsp; • &nbsp; <span style="color: var(--primary);">HOT HASHTAG:</span> #AIArt (+500% Reach)
+            &nbsp; • &nbsp; <span style="color: var(--accent);">GROWTH TIP:</span> Post Reels between 6 PM - 8 PM
+            &nbsp; • &nbsp; <span style="color: var(--secondary);">VIRAL FORMAT:</span> "Day in the Life" vlogs (Fast Cut)
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
