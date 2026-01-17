@@ -6,7 +6,6 @@ import itertools
 import os
 import re
 from collections import defaultdict
-from collections import defaultdict
 
 app = FastAPI()
 templates = Jinja2Templates(directory=".")
@@ -220,6 +219,8 @@ def determine_niche(bio, captions_text):
 # The Analysis Endpoint
 @app.post("/analyze")
 async def scrape_profile(username: str = Form(...)):
+    # Note: Using Instaloader without login often results in redirect errors.
+    # For production, you must use L.login(user, pass) or load_session_from_file.
     L = instaloader.Instaloader()
     
     try:
