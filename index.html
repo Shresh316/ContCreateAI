@@ -213,9 +213,7 @@
                 <button class="nav-btn" onclick="setTab('trends', this)" style="color: var(--warning);">🔥 Analytics & Suggestions</button>
                 <button class="nav-btn" onclick="setTab('goals', this)" style="color: var(--success);">🎯 Goals</button>
                 <button class="nav-btn" onclick="setTab('assistant', this)">💬 AI Assistant</button>
-                <button class="nav-btn" onclick="setTab('strategy', this)">🎯 AI Roadmap</button>
                 <button class="nav-btn" onclick="setTab('competitor', this)">⚔️ Competitor Intel</button>
-                <button class="nav-btn" onclick="setTab('aesthetic', this)">🎨 Aesthetic DNA</button>
                 <button class="nav-btn" onclick="setTab('tools', this)" style="color: var(--secondary);">🛠️ AI Tools</button>
             </div>
 
@@ -363,21 +361,6 @@
                 </div>
             </div>
 
-            <div id="strategy" class="tab-content">
-                <div class="roadmap-container">
-                    <div class="roadmap-timeline" id="ai-roadmap-list"></div>
-                    <div class="strategy-sidebar">
-                        <div class="glass" style="padding: 25px; border-radius: 16px; height: 300px; text-align: center;">
-                            <h4 style="margin-bottom: 15px;">Ideal Content Mix</h4>
-                            <div style="height: 220px; position: relative;"><canvas id="strategyChart"></canvas></div>
-                        </div>
-                        <div class="glass" style="padding: 25px; border-radius: 16px; flex:1;">
-                            <h4 style="margin-bottom: 15px; color: var(--accent);"><i class="fas fa-bolt"></i> Viral Ideas for You</h4>
-                            <div id="viral-ideas-list" style="font-size: 0.9rem; color: #ccc; line-height: 1.6;"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
 <div id="competitor" class="tab-content">
     <div class="competitor-layout">
@@ -408,35 +391,7 @@
     </div>
 </div>
 
-            <div id="aesthetic" class="tab-content">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-                    <div class="glass" style="padding: 30px; border-radius: 16px; text-align: center;" data-tilt>
-                        <i class="fas fa-palette" style="font-size: 2rem; color: var(--accent); margin-bottom: 15px;"></i>
-                        <h2>Visual Identity</h2>
-                        <p style="color: var(--text-muted); margin: 0 auto 30px;">AI Scanned Palette</p>
-                        <div class="palette-row" id="paletteBox"></div>
-                        <div style="display: flex; justify-content: center; gap: 40px; margin-top: 30px;">
-                            <div><div style="font-size: 2rem; font-weight: bold;">92%</div><div style="font-size: 0.8rem; color: var(--text-muted);">Consistency</div></div>
-                            <div><div style="font-size: 2rem; font-weight: bold;">Dark</div><div style="font-size: 0.8rem; color: var(--text-muted);">Vibe</div></div>
-                        </div>
-                    </div>
-                    <div class="glass" style="padding: 30px; border-radius: 16px;" data-tilt>
-                        <h3 style="margin-bottom: 10px;">Grid Planner</h3>
-                        <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 15px;">Click to upload & preview layout.</p>
-                        <div class="feed-grid">
-                            <label class="feed-item"><input type="file" hidden onchange="loadImage(this)"><i class="fas fa-plus"></i></label>
-                            <label class="feed-item"><input type="file" hidden onchange="loadImage(this)"><i class="fas fa-plus"></i></label>
-                            <label class="feed-item"><input type="file" hidden onchange="loadImage(this)"><i class="fas fa-plus"></i></label>
-                            <label class="feed-item"><input type="file" hidden onchange="loadImage(this)"><i class="fas fa-plus"></i></label>
-                            <label class="feed-item"><input type="file" hidden onchange="loadImage(this)"><i class="fas fa-plus"></i></label>
-                            <label class="feed-item"><input type="file" hidden onchange="loadImage(this)"><i class="fas fa-plus"></i></label>
-                            <label class="feed-item"><input type="file" hidden onchange="loadImage(this)"><i class="fas fa-plus"></i></label>
-                            <label class="feed-item"><input type="file" hidden onchange="loadImage(this)"><i class="fas fa-plus"></i></label>
-                            <label class="feed-item"><input type="file" hidden onchange="loadImage(this)"><i class="fas fa-plus"></i></label>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            
 
             <div id="tools" class="tab-content">
                 <div class="tools-grid">
@@ -457,6 +412,7 @@
                             Ready to scan...
                         </div>
                         <button class="btn" style="width: 100%;" onclick="runShadowbanScan()">Run Diagnostics</button>
+                        <div class="blur-overlay"><i class="fas fa-lock" style="font-size: 2rem; margin-bottom: 10px;"></i><button class="btn">Upgrade to PRO</button></div>
                     </div>
                     <div class="glass tool-card" data-tilt>
                          <h3><i class="fas fa-money-bill-wave" style="color: #10b981;"></i> Rate Calculator</h3>
@@ -466,6 +422,7 @@
                             <div id="money-display" style="font-size: 2rem; font-weight: bold; color: #10b981;">$0</div>
                          </div>
                          <button class="btn" style="width: 100%;" onclick="calcRate()">Calculate</button>
+                         <div class="blur-overlay"><i class="fas fa-lock" style="font-size: 2rem; margin-bottom: 10px;"></i><button class="btn">Upgrade to PRO</button></div>
                     </div>
                     <div class="glass tool-card" data-tilt>
                          <h3><i class="fas fa-pepper-hot" style="color: var(--danger);"></i> Roast My Feed</h3>
@@ -479,7 +436,6 @@
                         <h3><i class="fas fa-eye" style="color: var(--accent);"></i> Ad Spy 2.0</h3>
                         <p style="color: var(--text-muted); font-size: 0.85rem;">See competitors hidden ads.</p>
                         <br>
-                        <p>Lorem ipsum dolor sit amet contents hidden.</p>
                         <div class="blur-overlay"><i class="fas fa-lock" style="font-size: 2rem; margin-bottom: 10px;"></i><button class="btn">Upgrade to PRO</button></div>
                     </div>
                     <div class="glass tool-card" data-tilt>

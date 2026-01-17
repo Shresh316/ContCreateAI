@@ -3,13 +3,11 @@ VanillaTilt.init(document.querySelectorAll("[data-tilt]"), { max: 5, speed: 400,
 // --- GLOBAL VARIABLES ---
 let currentUsername = "";
 let globalFollowers = 0;
-let selectedStrategyKey = 'tech'; 
 
-// --- CHART INSTANCES (Global for proper destruction) ---
+// --- CHART INSTANCES ---
 let mainChart = null;
 let radarChart = null;
 let sentimentChart = null;
-let strategyChart = null;
 
 const API_KEY = "RAmK6mqLKrUnTv9YeEMFBnDQFcEFdafM"; 
 const API_URL = "https://api.mistral.ai/v1/chat/completions";
@@ -24,76 +22,95 @@ const tailoredTrends = {
     }
 };
 
+// --- HELPER: SAFE CLEAR & MANIPULATION ---
+function safeClear(id, content = '') {
+    const el = document.getElementById(id);
+    if (el) {
+        el.innerHTML = content;
+    } else {
+        console.warn(`SafeClear: Element #${id} not found.`);
+    }
+}
+
+function safeText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.innerText = text;
+}
+
+function safeValue(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+}
+
 // --- CORE: HARD RESET FUNCTION ---
-// This runs on "Reset" button AND before every new search
+// --- CORE: HARD RESET FUNCTION ---
 function clearState() {
-    // 1. Destroy Charts (Prevents "canvas is already in use" errors)
-    if(mainChart) { mainChart.destroy(); mainChart = null; }
-    if(radarChart) { radarChart.destroy(); radarChart = null; }
-    if(sentimentChart) { sentimentChart.destroy(); sentimentChart = null; }
-    if(strategyChart) { strategyChart.destroy(); strategyChart = null; }
+    // 1. Destroy Charts (Safely)
+    try {
+        if(mainChart) { mainChart.destroy(); mainChart = null; }
+        if(radarChart) { radarChart.destroy(); radarChart = null; }
+        if(sentimentChart) { sentimentChart.destroy(); sentimentChart = null; }
+    } catch (e) {
+        console.warn("Chart destruction error (ignored):", e);
+    }
 
-    // 2. Clear Visual Content (Lists, Grids, Avatars)
-    document.getElementById('viral-ideas-box').innerHTML = '';
-    document.getElementById('audio-box').innerHTML = '';
-    document.getElementById('apps-box').innerHTML = '';
-    document.getElementById('leaderboard-list').innerHTML = '';
-    document.getElementById('ai-roadmap-list').innerHTML = '';
-    document.getElementById('viral-ideas-list').innerHTML = '';
-    document.getElementById('paletteBox').innerHTML = '';
-    document.getElementById('heatmap').innerHTML = '';
-    document.getElementById('dash-avatar').innerHTML = ''; // Wipe Avatar
-    document.getElementById('chat-box').innerHTML = ''; // Wipe Chat history
-
-    // 3. Reset Text Placeholders to Defaults
-    document.getElementById('dashTitle').innerText = '@user';
-    document.getElementById('stat-followers').innerText = '...';
-    document.getElementById('stat-eng').innerText = '...';
-    document.getElementById('stat-reach').innerText = '...';
-    document.getElementById('stat-likes').innerText = '...';
-    document.getElementById('stat-comments').innerText = '...';
-    document.getElementById('stat-viral').innerText = '...';
-    document.getElementById('trend-topic-header').innerText = '🔥 Personalized Viral Strategy';
-    document.getElementById('money-display').innerText = '$0';
-    document.getElementById('captionScore').innerText = '0';
-    document.getElementById('captionFeedback').innerText = 'Waiting for input...';
+    // 2. Clear Visual Content (Safely)
+    safeClear('viral-ideas-box');
+    safeClear('audio-box');
+    safeClear('apps-box');
+    safeClear('leaderboard-list');
+    safeClear('heatmap');
+    safeClear('dash-avatar');
+    safeClear('chat-box');
+    safeClear('goal-steps-container');
+    safeClear('bioOutput');
+    safeClear('roast-output', '"Dare to click?"');
+    
+    // 3. Reset Text Placeholders
+    safeText('dashTitle', '@user');
+    safeText('stat-followers', '...');
+    safeText('stat-eng', '...');
+    safeText('stat-reach', '...');
+    safeText('stat-likes', '...');
+    safeText('stat-comments', '...');
+    safeText('stat-viral', '...');
+    safeText('trend-topic-header', '🔥 Personalized Viral Strategy');
+    safeText('money-display', '$0');
+    safeText('captionScore', '0');
+    safeText('captionFeedback', 'Waiting for input...');
+    safeText('winner-text', 'Analysis Pending...');
+    
+    const battleReport = document.getElementById('battle-report');
+    if(battleReport) battleReport.style.display = 'none';
 
     // 4. Clear Tool Inputs
-    document.getElementById('rivalInput').value = '';
-    document.getElementById('chatInput').value = '';
-    document.getElementById('goalInput').value = '';
-    document.getElementById('bioRole').value = '';
-    document.getElementById('bioVibe').value = '';
-    document.getElementById('captionInput').value = '';
+    safeValue('rivalInput', '');
+    safeValue('chatInput', '');
+    safeValue('goalInput', '');
+    safeValue('bioRole', '');
+    safeValue('bioVibe', '');
+    safeValue('captionInput', '');
 
     // 5. Reset Global Variables
     currentUsername = "";
     globalFollowers = 0;
 }
 
-// --- BUTTON: FULL RESET (Goes back to home) ---
+// --- BUTTON: FULL RESET ---
 function resetApp() {
-    clearState(); // Wipe all data first
-    
-    // Switch Views
+    clearState();
     document.getElementById('view-dashboard').style.display = 'none';
     document.getElementById('view-home').style.display = 'flex';
-    
-    // Clear Main Login Input
     const input = document.getElementById('usernameInput');
-    input.value = '';
-    input.focus();
+    if(input) {
+        input.value = '';
+        input.focus();
+    }
 }
 
 // --- APP STARTUP ---
 async function startApp() {
-    // 1. FORCE CLEAR ANALYTICS TABS IMMEDIATELY
-    document.getElementById('viral-ideas-box').innerHTML = '';
-    document.getElementById('audio-box').innerHTML = '';
-    document.getElementById('apps-box').innerHTML = '';
-    document.getElementById('trend-topic-header').innerText = 'Analysing Niche...'; 
-
-    clearState(); // Standard reset for other vars
+    clearState();
     
     runLoader(async () => {
         let formData = new FormData();
@@ -115,30 +132,28 @@ async function startApp() {
                 followers = data.followers;
                 avgLikes = data.avg_likes;
                 avgComments = data.avg_comments;
-                detectedNiche = data.niche; // <--- CAPTURE NEW NICHE
+                detectedNiche = data.niche;
                 success = true;
             } else { console.error("Scrape failed:", data.error); }
-        } catch (e) { console.error("Fetch failed:", e); }
+        } catch (e) { 
+            console.log("Offline Mode / Fetch failed. Using Simulation."); 
+        }
 
         const seed = stringToHash(currentUsername);
-        document.getElementById('dashTitle').innerText = currentUsername;
-
-        // 2. UPDATE HEADER WITH NEW NICHE
-        document.getElementById('trend-topic-header').innerText = `🔥 Personalized Strategy: ${detectedNiche}`;
+        safeText('dashTitle', currentUsername);
+        safeText('trend-topic-header', `🔥 Personalized Strategy: ${detectedNiche}`);
 
         const engagement = followers > 0 ? ((avgLikes + avgComments) / followers * 100).toFixed(2) : "1.5";
         
         if (success) {
             updateDashboardStatsReal(seed, followers, avgLikes, avgComments);
-            
-            // 3. GENERATE NEW SUGGESTIONS BASED ON DETECTED NICHE
             if (detectedNiche !== "Insufficient Data") {
                  generateAIStrategy(detectedNiche, followers, engagement);
             } else {
                  renderTrendsFallback("Insufficient Data");
             }
         } else {
-            updateDashboardStats(seed); // Simulation mode
+            updateDashboardStats(seed);
             renderTrendsFallback(detectedNiche);
         }
 
@@ -146,10 +161,7 @@ async function startApp() {
         initMainChart(seed);
         initRadarChart();
         initSentimentChart(seed);
-        generatePalette(seed);
         renderHeatmap(seed);
-        renderRoadmap(seed, detectedNiche);
-        initStrategyChart();
         renderLeaderboard();
 
         transitionToPage('view-home', 'view-dashboard');
@@ -162,9 +174,9 @@ async function generateAIStrategy(niche, followers, engagement) {
                             <i class="fas fa-circle-notch fa-spin"></i> Generating ${niche} tips...
                          </div>`;
     
-    document.getElementById('viral-ideas-box').innerHTML = loadingHTML;
-    document.getElementById('audio-box').innerHTML = loadingHTML;
-    document.getElementById('apps-box').innerHTML = loadingHTML;
+    safeClear('viral-ideas-box', loadingHTML);
+    safeClear('audio-box', loadingHTML);
+    safeClear('apps-box', loadingHTML);
 
     const prompt = `
         Context: Instagram Strategy for '${niche}' niche.
@@ -195,63 +207,83 @@ async function generateAIStrategy(niche, followers, engagement) {
         const data = await response.json();
         const content = data.choices[0].message.content;
         const strategy = JSON.parse(content);
-        
         updateTrendsUI(strategy);
         
     } catch (error) {
         console.error("AI Generation Failed:", error);
         renderTrendsFallback(niche); 
-        document.getElementById('viral-ideas-box').innerHTML += `<div style="color:var(--danger); font-size:0.7rem; margin-top:5px;">(AI Offline - Using Defaults)</div>`;
+        const box = document.getElementById('viral-ideas-box');
+        if(box) box.innerHTML += `<div style="color:var(--danger); font-size:0.7rem; margin-top:5px;">(AI Offline - Using Defaults)</div>`;
     }
 }
 
 function updateTrendsUI(strategy) {
     const ideasBox = document.getElementById('viral-ideas-box'); 
-    ideasBox.innerHTML = ''; 
+    if(ideasBox) {
+        ideasBox.innerHTML = '';
+        strategy.viralIdeas.forEach(idea => {
+            ideasBox.innerHTML += `<div class="trend-item"><div class="trend-icon"><i class="fas fa-video"></i></div> <div>${idea}</div></div>`;
+        });
+    }
     
     const audioBox = document.getElementById('audio-box'); 
-    audioBox.innerHTML = ''; 
+    if(audioBox) {
+        audioBox.innerHTML = '';
+        strategy.audio.forEach(track => {
+            audioBox.innerHTML += `<div class="trend-item"><div class="trend-icon"><i class="fas fa-music"></i></div> <div>${track}</div></div>`;
+        });
+    }
     
     const appsBox = document.getElementById('apps-box'); 
-    appsBox.innerHTML = '';
-
-    strategy.viralIdeas.forEach(idea => {
-        ideasBox.innerHTML += `<div class="trend-item"><div class="trend-icon"><i class="fas fa-video"></i></div> <div>${idea}</div></div>`;
-    });
-    
-    strategy.audio.forEach(track => {
-        audioBox.innerHTML += `<div class="trend-item"><div class="trend-icon"><i class="fas fa-music"></i></div> <div>${track}</div></div>`;
-    });
-    
-    strategy.apps.forEach(app => {
-        appsBox.innerHTML += `<div class="tag-pill">${app}</div>`;
-    });
+    if(appsBox) {
+        appsBox.innerHTML = '';
+        strategy.apps.forEach(app => {
+            appsBox.innerHTML += `<div class="tag-pill">${app}</div>`;
+        });
+    }
 }
 
 function renderTrendsFallback(detectedNiche) {
     if (detectedNiche === "Insufficient Data") {
-        document.getElementById('trend-topic-header').innerText = "⚠️ Low Activity Profile";
+        safeText('trend-topic-header', "⚠️ Low Activity Profile");
         const warn = `<div style="text-align:center; color:var(--text-muted); padding:20px; border:1px solid var(--glass-border); border-radius:8px;">
             <i class="fas fa-exclamation-triangle"></i> Not enough recent posts to analyze.
         </div>`;
-        document.getElementById('viral-ideas-box').innerHTML = warn;
-        document.getElementById('audio-box').innerHTML = warn;
-        document.getElementById('apps-box').innerHTML = warn;
+        safeClear('viral-ideas-box', warn);
+        safeClear('audio-box', warn);
+        safeClear('apps-box', warn);
         return;
     }
 
     const data = tailoredTrends['default'];
     data.niche = detectedNiche || 'General';
-    document.getElementById('trend-topic-header').innerText = `🔥 Personalized Strategy: ${data.niche}`;
+    safeText('trend-topic-header', `🔥 Personalized Strategy: ${data.niche}`);
     
-    const ideasBox = document.getElementById('viral-ideas-box'); ideasBox.innerHTML = '';
-    data.viralIdeas.forEach(i => ideasBox.innerHTML += `<div class="trend-item"><div class="trend-icon"><i class="fas fa-video"></i></div> <div>${i}</div></div>`);
-    // Fallback audio/apps filling omitted for brevity, but UI won't crash
+    const ideasBox = document.getElementById('viral-ideas-box');
+    if(ideasBox) {
+        ideasBox.innerHTML = '';
+        data.viralIdeas.forEach(i => ideasBox.innerHTML += `<div class="trend-item"><div class="trend-icon"><i class="fas fa-video"></i></div> <div>${i}</div></div>`);
+    }
+    
+    const audioBox = document.getElementById('audio-box');
+    if(audioBox) {
+        audioBox.innerHTML = '';
+        data.audio.forEach(i => audioBox.innerHTML += `<div class="trend-item"><div class="trend-icon"><i class="fas fa-music"></i></div> <div>${i}</div></div>`);
+    }
+
+    const appsBox = document.getElementById('apps-box');
+    if(appsBox) {
+        appsBox.innerHTML = '';
+        data.apps.forEach(i => appsBox.innerHTML += `<div class="tag-pill">${i}</div>`);
+    }
 }
 
 // --- CHART INITIALIZATION ---
 function initMainChart(seed) {
-    const ctx = document.getElementById('mainChart').getContext('2d');
+    const el = document.getElementById('mainChart');
+    if(!el) return;
+    
+    const ctx = el.getContext('2d');
     if(mainChart) mainChart.destroy();
     
     let gradient = ctx.createLinearGradient(0, 0, 0, 400);
@@ -264,27 +296,26 @@ function initMainChart(seed) {
 }
 
 function initRadarChart() {
-    const ctx = document.getElementById('radarChart').getContext('2d');
+    const el = document.getElementById('radarChart');
+    if(!el) return;
+    
+    const ctx = el.getContext('2d');
     if(radarChart) radarChart.destroy();
     
     radarChart = new Chart(ctx, { type: 'radar', data: { labels: ['Reach', 'Engagement', 'Freq', 'Saves', 'Shares'], datasets: [{ label: 'You', data: [80, 90, 70, 85, 95], backgroundColor: 'rgba(45, 212, 191, 0.2)', borderColor: '#2dd4bf' }] }, options: { responsive: true, maintainAspectRatio: false, scales: { r: { grid: { color: 'rgba(255,255,255,0.1)' }, pointLabels: { color: '#ccc' }, ticks: { display: false } } }, plugins: { legend: { labels: { color: 'white' } } } } });
 }
 
 function initSentimentChart(seed) {
-    const ctx = document.getElementById('sentimentChart').getContext('2d');
+    const el = document.getElementById('sentimentChart');
+    if(!el) return;
+    
+    const ctx = el.getContext('2d');
     if(sentimentChart) sentimentChart.destroy();
 
     const pos = getPseudoRandom(seed + 20, 50, 90);
     const neg = getPseudoRandom(seed + 21, 0, 100 - pos);
     const neu = 100 - pos - neg;
     sentimentChart = new Chart(ctx, { type: 'doughnut', data: { labels: ['Positive', 'Neutral', 'Negative'], datasets: [{ data: [pos, neu, neg], backgroundColor: ['#10b981', '#64748b', '#ef4444'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
-}
-
-function initStrategyChart() {
-    const ctx = document.getElementById('strategyChart').getContext('2d');
-    if(strategyChart) strategyChart.destroy();
-    
-    strategyChart = new Chart(ctx, { type: 'doughnut', data: { labels: ['Reels', 'Carousel', 'Stories'], datasets: [{ data: [33, 33, 33], backgroundColor: ['#7c3aed', '#2dd4bf', '#f472b6'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: 'white', boxWidth: 10, padding: 20 } } } } });
 }
 
 // --- TAB: GOALS ---
@@ -298,10 +329,12 @@ async function generateGoalPlan() {
     const container = document.getElementById('goal-steps-container');
     const resultsArea = document.getElementById('goal-results');
     
-    resultsArea.style.display = 'block';
-    container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--secondary); animation: pulse 1.5s infinite;">
-        <i class="fas fa-satellite-dish"></i> CALCULATING TRAJECTORY FOR ${currentNiche.toUpperCase()}...
-    </div>`;
+    if(resultsArea) resultsArea.style.display = 'block';
+    if(container) {
+        container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--secondary); animation: pulse 1.5s infinite;">
+            <i class="fas fa-satellite-dish"></i> CALCULATING TRAJECTORY FOR ${currentNiche.toUpperCase()}...
+        </div>`;
+    }
 
     const prompt = `
         Role: Elite Instagram Strategist.
@@ -350,6 +383,8 @@ async function generateGoalPlan() {
 
 function renderGoalSteps(steps) {
     const container = document.getElementById('goal-steps-container');
+    if(!container) return;
+    
     container.innerHTML = ''; 
     steps.forEach((step, index) => {
         container.innerHTML += `
@@ -404,10 +439,14 @@ async function sendMessage() {
 
         const data = await response.json();
         const botReply = data.choices[0].message.content;
-        document.getElementById(typingId).remove();
+        
+        const loader = document.getElementById(typingId);
+        if(loader) loader.remove();
+        
         chatBox.innerHTML += `<div class="message msg-bot">${botReply.replace(/\n/g, '<br>')}</div>`;
     } catch (e) {
-        document.getElementById(typingId).remove();
+        const loader = document.getElementById(typingId);
+        if(loader) loader.remove();
         chatBox.innerHTML += `<div class="message msg-bot">Simulating: Try using trending audio specific to ${currentNiche} to boost your reach! 📈</div>`;
     }
     scrollToBottom();
@@ -415,165 +454,27 @@ async function sendMessage() {
 
 function scrollToBottom() {
     const chatBox = document.getElementById('chat-box');
-    chatBox.scrollTop = chatBox.scrollHeight;
+    if(chatBox) chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// --- HELPER FUNCTIONS ---
-// !!! THIS WAS MISSING AND CAUSED THE BUG !!!
-function formatNumber(num) {
-    if(num >= 1000000) return (num/1000000).toFixed(1) + 'M';
-    if(num >= 1000) return (num/1000).toFixed(1) + 'k';
-    return num;
-}
-
-function openSettingsModal() { document.getElementById('settings-modal').style.display = 'flex'; }
-function closeSettingsModal() { document.getElementById('settings-modal').style.display = 'none'; }
-function fillAndSearch(user) { document.getElementById('usernameInput').value = user; }
-function handleChatEnter(e) { if(e.key === 'Enter') sendMessage(); }
-
-function sendQuickMsg(msg) { document.getElementById('chatInput').value = msg; sendMessage(); }
-
-function openGate() {
-    document.getElementById('gate-content').style.opacity = '0';
-    const left = document.getElementById('gate-left');
-    const right = document.getElementById('gate-right');
-    setTimeout(() => { left.style.transform = "translateX(-100%)"; right.style.transform = "translateX(100%)"; }, 300);
-    setTimeout(() => { document.getElementById('gate-overlay').style.display = 'none'; document.getElementById('view-platform-select').style.display = 'flex'; }, 1800);
-}
-
-function transitionToPage(hideId, showId) {
-    const overlay = document.getElementById('gate-overlay');
-    const left = document.getElementById('gate-left');
-    const right = document.getElementById('gate-right');
-    overlay.style.display = 'flex';
-    setTimeout(() => { left.style.transform = "translateX(0)"; right.style.transform = "translateX(0)"; }, 10);
-    setTimeout(() => {
-        if(hideId) document.getElementById(hideId).style.display = 'none';
-        if(showId) document.getElementById(showId).style.display = showId === 'view-dashboard' ? 'block' : 'flex';
-        left.style.transform = "translateX(-100%)"; right.style.transform = "translateX(100%)";
-        setTimeout(() => { overlay.style.display = 'none'; }, 1500);
-    }, 1500);
-}
-
-function selectPlatform(platform) {
-    if(platform === 'instagram') transitionToPage('view-platform-select', 'view-home');
-    else alert("Platform Coming Soon! Only Instagram is active for the Hackathon.");
-}
-
-function openTeamModal() { document.getElementById('team-modal').style.display = 'flex'; }
-function closeTeamModal() { document.getElementById('team-modal').style.display = 'none'; }
-
-function stringToHash(string) {
-    let hash = 0;
-    if (string.length == 0) return hash;
-    for (let i = 0; i < string.length; i++) { hash = ((hash << 5) - hash) + string.charCodeAt(i); hash = hash & hash; }
-    return Math.abs(hash);
-}
-
-function getPseudoRandom(seed, min, max) {
-    const x = Math.sin(seed++) * 10000;
-    const rand = x - Math.floor(x);
-    return Math.floor(rand * (max - min + 1)) + min;
-}
-
-function getSeededColor(seed) {
-    const colors = ['#7c3aed', '#2dd4bf', '#f472b6', '#ef4444', '#3b82f6', '#f59e0b'];
-    return colors[seed % colors.length];
-}
-
-function handleEnter(e) { if(e.key === 'Enter') initiateSearch(); }
-
-function initiateSearch() {
-    const input = document.getElementById('usernameInput');
-    if(!input.value.trim()) { input.style.borderColor = 'red'; setTimeout(() => input.style.borderColor = 'var(--glass-border)', 1000); return; }
-    currentUsername = input.value.trim();
-    if(!currentUsername.startsWith('@')) currentUsername = '@' + currentUsername;
-    const seed = stringToHash(currentUsername);
-    const initials = currentUsername.replace('@', '').substring(0, 2).toUpperCase();
-    const bgCol = getSeededColor(seed);
-    const avatarHTML = `<div style="background:${bgCol}; width:100%; height:100%; display:flex; align-items:center; justify-content:center;">${initials}</div>`;
-    document.getElementById('verify-avatar').innerHTML = avatarHTML;
-    document.getElementById('verify-username').innerText = currentUsername;
-    document.getElementById('dash-avatar').innerHTML = avatarHTML;
-    document.getElementById('verify-modal').style.display = 'flex';
-}
-
-function cancelSearch() { document.getElementById('verify-modal').style.display = 'none'; }
-function confirmSearch() { document.getElementById('verify-modal').style.display = 'none'; startApp(); }
-
-function runLoader(callback) {
-    const loader = document.getElementById('hacker-loader');
-    const container = document.getElementById('code-container');
-    const lines = ["> Connecting to Instagram API...", `> Identifying Target: ${currentUsername}...`, "> Fetching Follower Count...", "> Analyzing Color Histograms...", "> Calculating Virality Vectors...", "> ACCESS GRANTED."];
-    loader.style.display = 'block'; container.innerHTML = '';
-    let delay = 0;
-    lines.forEach((line, i) => { setTimeout(() => { const p = document.createElement('div'); p.className = 'code-line'; p.innerText = line; container.appendChild(p); }, delay); delay += 800; });
-    setTimeout(() => { loader.style.display = 'none'; callback(); }, delay + 500);
-}
-
-
-function updateDashboardStatsReal(seed, realFollowers, realAvgLikes, realAvgComments) {
-    globalFollowers = realFollowers;
-    const reach = Math.floor(realFollowers * (getPseudoRandom(seed+1, 12, 25) / 10)); 
-    const engRate = realFollowers > 0 ? ((realAvgLikes + realAvgComments) / realFollowers * 100).toFixed(2) : 0;
-    const viralScore = (getPseudoRandom(seed+3, 40, 95) / 10).toFixed(1);
-    
-    // !!! FORMATNUMBER IS USED HERE !!!
-    document.getElementById('stat-followers').innerText = formatNumber(realFollowers);
-    document.getElementById('stat-eng').innerText = engRate + "%";
-    document.getElementById('stat-reach').innerText = formatNumber(reach);
-    document.getElementById('stat-likes').innerText = formatNumber(realAvgLikes);
-    document.getElementById('stat-comments').innerText = formatNumber(realAvgComments);
-    document.getElementById('stat-viral').innerText = viralScore + "/10";
-}
-
-function updateDashboardStats(seed) {
-    const followers = getPseudoRandom(seed, 5000, 500000);
-    updateDashboardStatsReal(seed, followers, Math.floor(followers*0.05), Math.floor(followers*0.005));
-}
-
-function setTab(id, btn) {
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    btn.classList.add('active');
-}
-function setTheme(theme) { document.body.className = theme; }
-function toggleMission(el) { el.classList.toggle('done'); updateXP(); }
-function updateXP() { document.getElementById('xp-bar').style.width = "50%"; } 
-function runShadowbanScan() { /* ... */ }
-function calcRate() { /* ... */ }
-function loadImage(input) { /* ... */ }
-function renderHeatmap(seed) {
-    const container = document.getElementById('heatmap');
-    container.innerHTML = '<div></div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div><div>S</div>';
-    for(let i=0; i<28; i++) {
-        const div = document.createElement('div');
-        div.className = 'hm-cell';
-        if(getPseudoRandom(seed + i, 0, 100) > 50) div.classList.add('med');
-        container.appendChild(div);
-    }
-}
-// --- TAB: COMPETITOR INTEL (Functional) ---
-
-// --- TAB: COMPETITOR INTEL (Updated with Battle Report) ---
-// --- TAB: COMPETITOR INTEL (Complete Logic) ---
-
+// --- TAB: COMPETITOR INTEL ---
 async function updateRadar() {
     const rivalInput = document.getElementById('rivalInput').value.trim();
     if (!rivalInput) return alert("Please enter a competitor's username (@handle).");
 
     const btn = document.querySelector('#competitor button');
     const winnerText = document.getElementById('winner-text');
-    const reportBox = document.getElementById('battle-report'); // This matches the new HTML ID
+    const reportBox = document.getElementById('battle-report'); 
     
     // UI Loading State
     const originalBtnText = btn.innerText;
     btn.innerText = "🕵️ Scanning Rival...";
     btn.disabled = true;
-    winnerText.innerText = "Extracting engagement vectors...";
-    winnerText.style.color = "var(--warning)";
-    reportBox.style.display = "none"; 
+    if(winnerText) {
+        winnerText.innerText = "Extracting engagement vectors...";
+        winnerText.style.color = "var(--warning)";
+    }
+    if(reportBox) reportBox.style.display = "none"; 
 
     try {
         let formData = new FormData();
@@ -588,9 +489,14 @@ async function updateRadar() {
             const rivalEng = data.followers > 0 ? ((data.avg_likes + data.avg_comments) / data.followers * 100) : 0;
             const userFollowers = globalFollowers || 1000; 
             const maxFollowers = Math.max(userFollowers, rivalFollowers) || 1;
+            
             const userReachScore = Math.min((userFollowers / maxFollowers) * 100 + 20, 100);
             const rivalReachScore = Math.min((rivalFollowers / maxFollowers) * 100 + 20, 100);
-            const userEngVal = parseFloat(document.getElementById('stat-eng').innerText) || 2.5;
+            
+            let userEngVal = 2.5;
+            const userEngEl = document.getElementById('stat-eng');
+            if(userEngEl) userEngVal = parseFloat(userEngEl.innerText) || 2.5;
+            
             const userEngScore = Math.min(userEngVal * 10, 100); 
             const rivalEngScore = Math.min(rivalEng * 10, 100);
 
@@ -606,8 +512,6 @@ async function updateRadar() {
             const userStats = { reach: userReachScore, engagement: userEngScore, freq: 85, saves: 70, shares: 60 };
 
             updateRadarChartData(userStats, rivalStats, rivalInput);
-            
-            // This generates the text report
             generateBattleReport(userStats, rivalStats, rivalInput);
 
         } else {
@@ -648,8 +552,10 @@ function simulateRivalComparison(rivalName) {
 
 function generateBattleReport(userStats, rivalStats, rivalName) {
     const winnerText = document.getElementById('winner-text');
-    const reportBox = document.getElementById('battle-report'); // Targets the new HTML div
+    const reportBox = document.getElementById('battle-report'); 
     
+    if(!winnerText || !reportBox) return;
+
     const userTotal = Object.values(userStats).reduce((a,b)=>a+b,0);
     const rivalTotal = Object.values(rivalStats).reduce((a,b)=>a+b,0);
     
@@ -677,59 +583,20 @@ function generateBattleReport(userStats, rivalStats, rivalName) {
     reportBox.style.display = "block";
 }
 
-// Helper to update the Chart.js instance
-function updateRadarChartData(user, rival, rivalName) {
-    if (!radarChart) return;
-
-    radarChart.data.datasets = [
-        {
-            label: 'You',
-            data: [user.reach, user.engagement, user.freq, user.saves, user.shares],
-            backgroundColor: 'rgba(45, 212, 191, 0.2)',
-            borderColor: '#2dd4bf',
-            borderWidth: 2
-        },
-        {
-            label: rivalName,
-            data: [rival.reach, rival.engagement, rival.freq, rival.saves, rival.shares],
-            backgroundColor: 'rgba(239, 68, 68, 0.2)', // Red for rival
-            borderColor: '#ef4444',
-            borderWidth: 2
-        }
-    ];
-    radarChart.update();
-}
-
-// Fallback Simulation (If API fails or account is private)
-function simulateRivalComparison(rivalName) {
-    const seed = stringToHash(rivalName);
-    const rivalStats = {
-        reach: getPseudoRandom(seed, 20, 90),
-        engagement: getPseudoRandom(seed+1, 30, 80),
-        freq: getPseudoRandom(seed+2, 50, 95),
-        saves: getPseudoRandom(seed+3, 20, 70),
-        shares: getPseudoRandom(seed+4, 10, 60)
-    };
-    const userStats = { reach: 75, engagement: 80, freq: 85, saves: 70, shares: 60 };
-    
-    updateRadarChartData(userStats, rivalStats, rivalName);
-    
-    const wText = document.getElementById('winner-text');
-    wText.innerText = "⚠️ Simulation Mode (Rival is Private)";
-    wText.style.color = "var(--warning)";
-}
-
-// --- NICHE LEADERBOARD (Dynamic) ---
+// --- NICHE LEADERBOARD ---
 function renderLeaderboard() {
     const container = document.getElementById('leaderboard-list');
-    container.innerHTML = ''; // Clear old list
+    if(!container) return;
+    
+    container.innerHTML = ''; 
 
-    // 1. Get Niche (e.g. "Tech & Coding")
-    let niche = document.getElementById('trend-topic-header').innerText.replace('🔥 Personalized Strategy: ', '');
-    // Handle cases where header hasn't loaded yet
-    if (niche.includes('...') || niche.includes('Analysing')) niche = "Tech & Coding"; 
+    let niche = "General Creator";
+    const header = document.getElementById('trend-topic-header');
+    if(header) {
+        niche = header.innerText.replace('🔥 Personalized Strategy: ', '');
+        if (niche.includes('...') || niche.includes('Analysing')) niche = "Tech & Coding"; 
+    }
 
-    // 2. Define Famous Leaders per Niche
     const leadersDB = {
         "Tech & Coding": ["@techcrunch", "@code.bliss", "@react.js", "@programmer.humor"],
         "Art & Design": ["@banksy", "@design.milk", "@procreate", "@ux.ui"],
@@ -742,9 +609,8 @@ function renderLeaderboard() {
 
     const targets = leadersDB[niche] || leadersDB["General Creator"];
 
-    // 3. Render Rows
     targets.forEach((handle, index) => {
-        const growth = (Math.random() * 15 + 5).toFixed(1); // Random growth 5-20%
+        const growth = (Math.random() * 15 + 5).toFixed(1); 
         const row = `
             <div class="leader-row">
                 <div style="display:flex; align-items:center; gap:10px;">
@@ -757,15 +623,16 @@ function renderLeaderboard() {
         container.innerHTML += row;
     });
 }
-// --- TOOL: AI BIO GENERATOR ---
+
+// --- TOOLS ---
 async function generateBio() {
     const role = document.getElementById('bioRole').value.trim();
     const vibe = document.getElementById('bioVibe').value.trim();
     const output = document.getElementById('bioOutput');
     
     if (!role || !vibe) return alert("Please enter a Role and Vibe first!");
+    if (!output) return;
 
-    // UI Loading
     output.innerHTML = `<div style="text-align:center; padding:10px;"><i class="fas fa-circle-notch fa-spin"></i> Cooking up viral bios...</div>`;
     output.style.color = "var(--secondary)";
 
@@ -788,8 +655,6 @@ async function generateBio() {
         });
 
         const data = await response.json();
-        
-        // If API returns an error inside the JSON
         if (data.error) throw new Error(data.error.message);
 
         const result = data.choices[0].message.content;
@@ -798,31 +663,26 @@ async function generateBio() {
 
     } catch (e) {
         console.warn("Bio API failed, switching to Simulation:", e);
-        
-        // --- FALLBACK SIMULATION (Guarantees a result) ---
         setTimeout(() => {
             const simulatedBios = [
                 `✨ Official ${role} | ${vibe} Soul <br> 📍 Global Citizen <br> 📩 Collabs via DM`,
                 `Creating magic as a ${role} ⚡ <br> ${vibe} vibes only. <br> 👇 Check my latest work`,
                 `👋 Just a ${role} chasing dreams. <br> 🎨 Lover of ${vibe} aesthetics. <br> 🚀 Follow my journey.`
             ];
-            
             output.innerHTML = simulatedBios.join('<div style="margin: 10px 0; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;"></div>');
             output.style.color = "#ccc";
-            
-            // Add a small note so you know it's a simulation
-            output.innerHTML += `<div style="font-size:0.7rem; color:var(--text-muted); margin-top:10px;">(Generated via Offline Mode)</div>`;
         }, 1000); 
     }
 }
 
-// --- TOOL: ROAST MY FEED (Brutal Mode) ---
 async function runRoast() {
     const output = document.getElementById('roast-output');
-    const niche = document.getElementById('trend-topic-header').innerText.replace('🔥 Personalized Strategy: ', '');
+    if(!output) return;
+    
+    const nicheEl = document.getElementById('trend-topic-header');
+    const niche = nicheEl ? nicheEl.innerText.replace('🔥 Personalized Strategy: ', '') : "General";
     const followers = globalFollowers;
 
-    // UI Loading
     output.innerHTML = `<i class="fas fa-fire fa-spin"></i> Incinerating your ego...`;
     output.style.color = "var(--danger)";
 
@@ -842,10 +702,8 @@ async function runRoast() {
                 messages: [{ role: "user", content: prompt }]
             })
         });
-
         const data = await response.json();
         const roast = data.choices[0].message.content;
-        
         output.innerHTML = `"${roast}"`;
         output.style.color = "#fff";
 
@@ -854,9 +712,7 @@ async function runRoast() {
     }
 }
 
-// --- TOOL: CAPTION OPTIMIZER (Grading System) ---
 let captionDebounce;
-
 function analyzeCaption() {
     clearTimeout(captionDebounce);
     const input = document.getElementById('captionInput').value;
@@ -864,14 +720,13 @@ function analyzeCaption() {
     const feedbackDisplay = document.getElementById('captionFeedback');
 
     if (input.length < 5) {
-        scoreDisplay.innerText = "0";
-        feedbackDisplay.innerText = "Waiting for input...";
+        if(scoreDisplay) scoreDisplay.innerText = "0";
+        if(feedbackDisplay) feedbackDisplay.innerText = "Waiting for input...";
         return;
     }
 
-    feedbackDisplay.innerText = "Analyzing hook & keywords...";
+    if(feedbackDisplay) feedbackDisplay.innerText = "Analyzing hook & keywords...";
     
-    // Wait 1 second after typing stops to save API calls
     captionDebounce = setTimeout(async () => {
         const prompt = `
             Task: Rate this Instagram caption out of 100 and give 1 short tip.
@@ -896,25 +751,214 @@ function analyzeCaption() {
             const data = await response.json();
             const result = JSON.parse(data.choices[0].message.content);
             
-            // Animate Score
-            animateValue(scoreDisplay, parseInt(scoreDisplay.innerText), result.score, 1000);
-            
-            // Color Coding
-            if(result.score > 80) scoreDisplay.style.color = "var(--success)";
-            else if(result.score > 50) scoreDisplay.style.color = "var(--warning)";
-            else scoreDisplay.style.color = "var(--danger)";
+            if(scoreDisplay) {
+                animateValue(scoreDisplay, parseInt(scoreDisplay.innerText), result.score, 1000);
+                if(result.score > 80) scoreDisplay.style.color = "var(--success)";
+                else if(result.score > 50) scoreDisplay.style.color = "var(--warning)";
+                else scoreDisplay.style.color = "var(--danger)";
+            }
 
-            feedbackDisplay.innerText = result.feedback;
+            if(feedbackDisplay) feedbackDisplay.innerText = result.feedback;
 
         } catch (e) {
-            console.warn("Caption API failed", e);
-            scoreDisplay.innerText = "Err";
-            feedbackDisplay.innerText = "AI unavailable.";
+            if(scoreDisplay) scoreDisplay.innerText = "Err";
+            if(feedbackDisplay) feedbackDisplay.innerText = "AI unavailable.";
         }
     }, 1000);
 }
 
-// Helper to animate numbers (e.g. 0 to 85)
+function runShadowbanScan() {
+    const term = document.getElementById('scan-terminal');
+    if(!term) return;
+    
+    const steps = ["Connecting to Instagram API...", "Checking hashtags...", "Scanning for banned keywords...", "Verifying engagement limits...", "DIAGNOSTIC COMPLETE."];
+    term.innerHTML = '';
+    let delay = 0;
+    steps.forEach(s => {
+        setTimeout(() => term.innerHTML += `> ${s}<br>`, delay);
+        delay += 800;
+    });
+    setTimeout(() => term.innerHTML += `<span style='color:var(--success)'>Result: No shadowban detected. System Healthy.</span>`, delay + 200);
+}
+
+function calcRate() {
+    const display = document.getElementById('money-display');
+    if(!display) return;
+    
+    const rate = (globalFollowers * 0.008).toFixed(0); 
+    let start = 0;
+    const interval = setInterval(() => {
+        start += Math.ceil(rate / 20);
+        if(start >= rate) { start = rate; clearInterval(interval); }
+        display.innerText = '$' + start;
+    }, 50);
+}
+
+// --- HELPER FUNCTIONS ---
+function formatNumber(num) {
+    if(num >= 1000000) return (num/1000000).toFixed(1) + 'M';
+    if(num >= 1000) return (num/1000).toFixed(1) + 'k';
+    return num;
+}
+
+function openSettingsModal() { document.getElementById('settings-modal').style.display = 'flex'; }
+function closeSettingsModal() { document.getElementById('settings-modal').style.display = 'none'; }
+function fillAndSearch(user) { 
+    const el = document.getElementById('usernameInput');
+    if(el) el.value = user; 
+}
+function handleChatEnter(e) { if(e.key === 'Enter') sendMessage(); }
+function sendQuickMsg(msg) { 
+    const el = document.getElementById('chatInput');
+    if(el) { el.value = msg; sendMessage(); }
+}
+function openTeamModal() { document.getElementById('team-modal').style.display = 'flex'; }
+function closeTeamModal() { document.getElementById('team-modal').style.display = 'none'; }
+
+function openGate() {
+    document.getElementById('gate-content').style.opacity = '0';
+    const left = document.getElementById('gate-left');
+    const right = document.getElementById('gate-right');
+    setTimeout(() => { left.style.transform = "translateX(-100%)"; right.style.transform = "translateX(100%)"; }, 300);
+    setTimeout(() => { document.getElementById('gate-overlay').style.display = 'none'; document.getElementById('view-platform-select').style.display = 'flex'; }, 1800);
+}
+
+function transitionToPage(hideId, showId) {
+    const overlay = document.getElementById('gate-overlay');
+    const left = document.getElementById('gate-left');
+    const right = document.getElementById('gate-right');
+    overlay.style.display = 'flex';
+    setTimeout(() => { left.style.transform = "translateX(0)"; right.style.transform = "translateX(0)"; }, 10);
+    setTimeout(() => {
+        if(hideId) document.getElementById(hideId).style.display = 'none';
+        if(showId) document.getElementById(showId).style.display = showId === 'view-dashboard' ? 'block' : 'flex';
+        left.style.transform = "translateX(-100%)"; right.style.transform = "translateX(100%)";
+        setTimeout(() => { overlay.style.display = 'none'; }, 1500);
+    }, 1500);
+}
+
+function selectPlatform(platform) {
+    if(platform === 'instagram') transitionToPage('view-platform-select', 'view-home');
+    else alert("Platform Coming Soon! Only Instagram is active for the Hackathon.");
+}
+
+function stringToHash(string) {
+    let hash = 0;
+    if (string.length == 0) return hash;
+    for (let i = 0; i < string.length; i++) { hash = ((hash << 5) - hash) + string.charCodeAt(i); hash = hash & hash; }
+    return Math.abs(hash);
+}
+
+function getPseudoRandom(seed, min, max) {
+    const x = Math.sin(seed++) * 10000;
+    const rand = x - Math.floor(x);
+    return Math.floor(rand * (max - min + 1)) + min;
+}
+
+function getSeededColor(seed) {
+    const colors = ['#7c3aed', '#2dd4bf', '#f472b6', '#ef4444', '#3b82f6', '#f59e0b'];
+    return colors[seed % colors.length];
+}
+
+function handleEnter(e) { if(e.key === 'Enter') initiateSearch(); }
+
+function initiateSearch() {
+    const input = document.getElementById('usernameInput');
+    if(!input.value.trim()) { input.style.borderColor = 'red'; setTimeout(() => input.style.borderColor = 'var(--glass-border)', 1000); return; }
+    currentUsername = input.value.trim();
+    if(!currentUsername.startsWith('@')) currentUsername = '@' + currentUsername;
+    const seed = stringToHash(currentUsername);
+    const initials = currentUsername.replace('@', '').substring(0, 2).toUpperCase();
+    const bgCol = getSeededColor(seed);
+    const avatarHTML = `<div style="background:${bgCol}; width:100%; height:100%; display:flex; align-items:center; justify-content:center;">${initials}</div>`;
+    
+    safeClear('verify-avatar', avatarHTML);
+    safeText('verify-username', currentUsername);
+    safeClear('dash-avatar', avatarHTML);
+    
+    document.getElementById('verify-modal').style.display = 'flex';
+}
+
+function cancelSearch() { document.getElementById('verify-modal').style.display = 'none'; }
+function confirmSearch() { document.getElementById('verify-modal').style.display = 'none'; startApp(); }
+
+function runLoader(callback) {
+    const loader = document.getElementById('hacker-loader');
+    const container = document.getElementById('code-container');
+    
+    // Safety check: If elements are missing, skip animation and run callback
+    if (!loader || !container) {
+        console.error("Loader elements missing from DOM.");
+        callback(); 
+        return;
+    }
+
+    const lines = ["> Connecting to Instagram API...", `> Identifying Target: ${currentUsername}...`, "> Fetching Follower Count...", "> Analyzing Color Histograms...", "> Calculating Virality Vectors...", "> ACCESS GRANTED."];
+    
+    loader.style.display = 'block'; 
+    container.innerHTML = '';
+    
+    let delay = 0;
+    lines.forEach((line, i) => { 
+        setTimeout(() => { 
+            const p = document.createElement('div'); 
+            p.className = 'code-line'; 
+            p.innerText = line; 
+            if(container) container.appendChild(p); 
+        }, delay); 
+        delay += 800; 
+    });
+    
+    setTimeout(() => { 
+        loader.style.display = 'none'; 
+        callback(); 
+    }, delay + 500);
+}
+
+function updateDashboardStatsReal(seed, realFollowers, realAvgLikes, realAvgComments) {
+    globalFollowers = realFollowers;
+    const reach = Math.floor(realFollowers * (getPseudoRandom(seed+1, 12, 25) / 10)); 
+    const engRate = realFollowers > 0 ? ((realAvgLikes + realAvgComments) / realFollowers * 100).toFixed(2) : 0;
+    const viralScore = (getPseudoRandom(seed+3, 40, 95) / 10).toFixed(1);
+    
+    safeText('stat-followers', formatNumber(realFollowers));
+    safeText('stat-eng', engRate + "%");
+    safeText('stat-reach', formatNumber(reach));
+    safeText('stat-likes', formatNumber(realAvgLikes));
+    safeText('stat-comments', formatNumber(realAvgComments));
+    safeText('stat-viral', viralScore + "/10");
+}
+
+function updateDashboardStats(seed) {
+    const followers = getPseudoRandom(seed, 5000, 500000);
+    updateDashboardStatsReal(seed, followers, Math.floor(followers*0.05), Math.floor(followers*0.005));
+}
+
+function setTab(id, btn) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+    
+    const target = document.getElementById(id);
+    if(target) target.classList.add('active');
+    btn.classList.add('active');
+}
+function setTheme(theme) { document.body.className = theme; }
+function toggleMission(el) { el.classList.toggle('done'); updateXP(); }
+function updateXP() { document.getElementById('xp-bar').style.width = "50%"; } 
+
+function renderHeatmap(seed) {
+    const container = document.getElementById('heatmap');
+    if(!container) return;
+    
+    container.innerHTML = '<div></div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div><div>S</div>';
+    for(let i=0; i<28; i++) {
+        const div = document.createElement('div');
+        div.className = 'hm-cell';
+        if(getPseudoRandom(seed + i, 0, 100) > 50) div.classList.add('med');
+        container.appendChild(div);
+    }
+}
+
 function animateValue(obj, start, end, duration) {
     let startTimestamp = null;
     const step = (timestamp) => {
@@ -924,30 +968,4 @@ function animateValue(obj, start, end, duration) {
         if (progress < 1) window.requestAnimationFrame(step);
     };
     window.requestAnimationFrame(step);
-}
-
-function generatePalette(seed) {
-    const colors = ['#0f172a', '#334155', '#475569', '#7c3aed', '#a78bfa'];
-    if(seed % 2 === 0) colors.reverse();
-    const container = document.getElementById('paletteBox'); container.innerHTML = '';
-    colors.forEach(c => { const div = document.createElement('div'); div.className = 'color-chip'; div.style.backgroundColor = c; container.appendChild(div); });
-}
-
-// Added basic Roadmap rendering to ensure tab isn't empty
-function renderRoadmap(seed, detectedNiche) {
-    const list = document.getElementById('ai-roadmap-list');
-    list.innerHTML = `
-        <div class="timeline-item">
-            <div class="timeline-dot"></div>
-            <div class="timeline-header"><span class="timeline-phase">PHASE 1: FOUNDATION</span></div>
-            <h3 class="timeline-title">Audit & Optimize</h3>
-            <p class="timeline-desc">Your bio needs to include ${detectedNiche} keywords. Fix highlights.</p>
-        </div>
-        <div class="timeline-item">
-            <div class="timeline-dot" style="background:var(--primary); box-shadow:0 0 10px var(--primary);"></div>
-            <div class="timeline-header"><span class="timeline-phase" style="color:var(--secondary)">PHASE 2: GROWTH</span></div>
-            <h3 class="timeline-title">The Volume Strategy</h3>
-            <p class="timeline-desc">Post 3 Reels per week using trending audio provided in the dashboard.</p>
-        </div>
-    `;
 }
