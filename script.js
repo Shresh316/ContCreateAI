@@ -45,243 +45,67 @@ function safeValue(id, val) {
 // --- CORE: HARD RESET FUNCTION ---
 // --- CORE: HARD RESET FUNCTION ---
 function clearState() {
-
     // 1. Destroy Charts (Safely)
-
     try {
-
         if(mainChart) { mainChart.destroy(); mainChart = null; }
-
         if(radarChart) { radarChart.destroy(); radarChart = null; }
-
         if(sentimentChart) { sentimentChart.destroy(); sentimentChart = null; }
-
     } catch (e) {
-
         console.warn("Chart destruction error (ignored):", e);
-
     }
 
-
-
-Copy
-
-Copy
-
-    // 2. Clear Visual Content
-
+    // 2. Clear Visual Content (Safely)
     safeClear('viral-ideas-box');
-
     safeClear('audio-box');
-
     safeClear('apps-box');
-
     safeClear('leaderboard-list');
-
     safeClear('heatmap');
-
     safeClear('dash-avatar');
-
-Copy
-
-Copy
-
+    safeClear('chat-box');
     safeClear('goal-steps-container');
-
     safeClear('bioOutput');
-
     safeClear('roast-output', '"Dare to click?"');
-
     
-
-Copy
-
-Copy
-
-    // 3. Reset Chat to Default Message
-
-    const defaultChatMsg = `
-
-        <div class="message msg-bot">
-
-            Hello! I am your <b>REAL AI</b> Instagram Growth Assistant (Powered by Mistral). <br>
-
-            I can generate topics, captions, and strategies for you. <br>
-
-            Try asking: <b>"Give me 3 viral topics"</b> or <b>"Write a caption for a travel photo"</b>.
-
-        </div>`;
-
-    safeClear('chat-box', defaultChatMsg);
-
-
-
-    // 4. Reset Tools & Terminals
-
-    safeClear('scan-terminal', 'Ready to scan...');
-
+    // 3. Reset Text Placeholders
+    safeText('dashTitle', '@user');
+    safeText('stat-followers', '...');
+    safeText('stat-eng', '...');
+    safeText('stat-reach', '...');
+    safeText('stat-likes', '...');
+    safeText('stat-comments', '...');
+    safeText('stat-viral', '...');
+    safeText('trend-topic-header', '🔥 Personalized Viral Strategy');
     safeText('money-display', '$0');
-
     safeText('captionScore', '0');
-
     safeText('captionFeedback', 'Waiting for input...');
-
+    safeText('winner-text', 'Analysis Pending...');
     
-
-    // 5. Reset Goals & Competitor Sections
-
-    const goalResults = document.getElementById('goal-results');
-
-    if(goalResults) goalResults.style.display = 'none';
-
-
-
     const battleReport = document.getElementById('battle-report');
-
     if(battleReport) battleReport.style.display = 'none';
 
-    
-
-    safeText('winner-text', 'Analysis Pending...');
-
-    const winnerText = document.getElementById('winner-text');
-
-    if(winnerText) winnerText.style.color = 'var(--success)';
-
-
-
-    // 6. Reset Text Placeholders (Stats)
-
-    safeText('dashTitle', '@user');
-
-    safeText('stat-followers', '...');
-
-    safeText('stat-eng', '...');
-
-    safeText('stat-reach', '...');
-
-    safeText('stat-likes', '...');
-
-    safeText('stat-comments', '...');
-
-    safeText('stat-viral', '...');
-
-    safeText('trend-topic-header', '🔥 Personalized Viral Strategy');
-
-Copy
-
-Copy
-
-
-
-Copy
-
-Copy
-
-    // 7. Clear All Inputs
-
-    safeValue('usernameInput', '');
-
+    // 4. Clear Tool Inputs
     safeValue('rivalInput', '');
-
     safeValue('chatInput', '');
-
     safeValue('goalInput', '');
-
     safeValue('bioRole', '');
-
     safeValue('bioVibe', '');
-
     safeValue('captionInput', '');
 
-
-
-Copy
-
-Copy
-
-    // 8. Reset XP & Missions
-
-    document.querySelectorAll('.mission-item').forEach(el => el.classList.remove('done'));
-
-    const xpBar = document.getElementById('xp-bar');
-
-    if(xpBar) xpBar.style.width = '0%';
-
-    safeText('xp-text', '0/3 XP');
-
-
-
-    // 9. Reset Global Variables
-
+    // 5. Reset Global Variables
     currentUsername = "";
-
     globalFollowers = 0;
-
-Copy
-
-Copy
-
-
-
-    // 10. Force Tab Reset to Overview
-
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-
-    document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-
-    
-
-    // Set first tab active
-
-    const firstTab = document.getElementById('overview');
-
-    const firstBtn = document.querySelector('.nav-btn'); // Assumes first button is overview
-
-    if(firstTab) firstTab.classList.add('active');
-
-    if(firstBtn) firstBtn.classList.add('active');
-
 }
 
-
-
 // --- BUTTON: FULL RESET ---
-
 function resetApp() {
-
-Copy
-
-Copy
-
-    clearState(); // Calls the robust clearing function above
-
-    
-
-    // UI Transitions
-
+    clearState();
     document.getElementById('view-dashboard').style.display = 'none';
-
     document.getElementById('view-home').style.display = 'flex';
-
-Copy
-
-Copy
-
-    
-
-    // Focus back on login
-
     const input = document.getElementById('usernameInput');
-
     if(input) {
-
         input.value = '';
-
         input.focus();
-
     }
-
 }
 
 // --- APP STARTUP ---
