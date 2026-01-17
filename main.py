@@ -101,4 +101,4 @@ async def scrape_profile(username: str = Form(...)):
         }
     except Exception as e:
         print(f"Error scraping {username}: {e}")
-        return {"success": False, "error": str(e)}
+        return {"success": False, "error": str(e)} 
